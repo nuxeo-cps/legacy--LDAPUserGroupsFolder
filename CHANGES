@@ -1,0 +1,17 @@
+ZODB Requires:
+~~~~~~~~~~~~~~
+- NuxUserGroups is mandatory for groups support.
+
+New features:
+~~~~~~~~~~~~~
+- First packaged release.
+- It is a modification of LDAPUserFolder that adds group support.
+- Groups can be stored in ZODB or in LDAP (like roles).
+
+Bug fixes:
+~~~~~~~~~~
+-
+
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-

@@ -2181,7 +2181,8 @@ class LDAPUserFolder(BasicUserFolder):
 
         if self._local_usergroups:
             if len(usergroup_dns) == 0:
-                del self._usergroups_store[user_dn]
+                if self._usergroups_store.has_key(user_dn):
+                    del self._usergroups_store[user_dn]
             else:
                 self._usergroups_store[user_dn] = usergroup_dns
 

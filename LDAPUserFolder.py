@@ -1398,7 +1398,12 @@ class LDAPUserFolder(BasicUserFolder):
           - search_restricted_member_list : list of members on wich we want to
           perform the research.  Just a matter of optimisation in here.
         """
-        restricted_search_member_list = options.get('search_restricted_member_list', [])
+
+        restricted_search_member_list = []
+        if options is not None:
+            restricted_search_member_list = options.get(
+                'search_restricted_member_list', [])
+
         allowed_props = self.listUserProperties()
         mapped = self._getMappedProperties()
         kw.update(query)

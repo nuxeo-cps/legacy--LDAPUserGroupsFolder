@@ -83,9 +83,7 @@ class LDAPUser(BasicUser):
     security.declarePrivate('setSecurityProfile')
     def setSecurityProfile(self, password=None, roles=None, domains=None):
         """Set the user's basic security profile"""
-        LOG('setSecurityProfile', DEBUG, "xxxxxxxxxxxxxxxxxxxxx   ...")
         aclu = self.acl_users
-        LOG('setSecurityProfile', DEBUG, "before _doChangeUser")
         aclu._doChangeUser(self.getUserName(), password, roles, domains)
 
 

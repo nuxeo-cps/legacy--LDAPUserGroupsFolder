@@ -1251,6 +1251,9 @@ class LDAPUserFolder(BasicUserFolder):
         if not filter:
             filter = '(objectClass=*)'
 
+        from zLOG import LOG, DEBUG
+        LOG('_searchWithFilter', DEBUG, 'filter=%s' % filter)
+
         res = self._delegate.search(base=self.users_base,
                                     scope=self.users_scope,
                                     filter=filter,

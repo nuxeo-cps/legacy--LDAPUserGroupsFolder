@@ -112,7 +112,7 @@ class LDAPUserFolder(BasicUserFolder):
     
     security.declareProtected(view_management_screens, 'manage_grouprecords')
     manage_grouprecords = DTMLFile('dtml/groups', globals())
-    
+
     security.declareProtected(view_management_screens, 'manage_usergrouprecords')
     manage_usergrouprecords = DTMLFile('dtml/usergroups', globals())
 
@@ -238,7 +238,7 @@ class LDAPUserFolder(BasicUserFolder):
     security.declarePrivate('_lookupuser')
     def _lookupuser(self, uid, pwd=None):
         """
-            returns a unique RID and the groups a uid belongs to 
+            returns a unique RID and the groups a uid belongs to
             as well as a dictionary containing user attributes
             and also the usergroups
         """
@@ -1390,6 +1390,9 @@ class LDAPUserFolder(BasicUserFolder):
             else:
                 raise ValueError("Bad value %s for '%s'" % `value`, key)
             filter_elems.append(f)
+
+        for objclass in self._user_objclasses:
+            filter_elems.append('(objectClass=%s)' % objclass)
         filter = ''.join(filter_elems)
         if len(filter_elems) > 1:
             filter = '(&%s)' % filter

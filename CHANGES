@@ -3,7 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Works correctly with local role blocking 'group:role:Anonymous': '-'.
 Bug fixes:
 ~~~~~~~~~~
 -

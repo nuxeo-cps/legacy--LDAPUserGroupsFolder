@@ -1667,6 +1667,7 @@ class LDAPUserFolder(BasicUserFolder):
         # Modified from AccessControl.User.getRolesInContext().
         merged = {}
         object = getattr(object, 'aq_inner', object)
+        stop_loop = 0
         while 1:
             if hasattr(object, '__ac_local_roles__'):
                 dict = object.__ac_local_roles__ or {}
@@ -1675,6 +1676,8 @@ class LDAPUserFolder(BasicUserFolder):
                 for k, v in dict.items():
                     if withgroups:
                         k = 'user:'+k # groups
+                    # Skip blocking roles
+                    v = [r for r in v if r and r[0] != '-']
                     if merged.has_key(k):
                         merged[k] = merged[k] + v
                     else:
@@ -1687,10 +1690,17 @@ class LDAPUserFolder(BasicUserFolder):
                         dict = dict()
                     for k, v in dict.items():
                         k = 'group:'+k
+                        # Blocking, simplest case: everyone is blocked.
+                        if k == 'group:role:Anonymous' and '-' in v:
+                            stop_loop = 1
+                        # Skip blocking roles
+                        v = [r for r in v if r and r[0] != '-']
                         if merged.has_key(k):
                             merged[k] = merged[k] + v
                         else:
                             merged[k] = v
+                    if stop_loop:
+                        break
             # end groups
             if hasattr(object, 'aq_parent'):
                 object = object.aq_parent

@@ -24,6 +24,7 @@ from AccessControl.SecurityManagement import getSecurityManager
 from AccessControl.Permissions import view_management_screens, \
                                       manage_users, \
                                       view
+from AccessControl.PermissionRole import rolesForPermissionOn
 from OFS.SimpleItem import SimpleItem
 from BTrees.OOBTree import OOBTree
 
@@ -1173,6 +1174,81 @@ class LDAPUserFolder(BasicUserFolder):
 ##         # XXX CPS implement this...
 ##         raise NotImplementedError
 
+
+    #
+    # CPS User Folder behavior.
+    # XXX In need of refactoring.
+    #
+
+    security.declarePrivate('mergedLocalRoles')
+    def mergedLocalRoles(self, object, withgroups=0, withpath=None):
+        """Return a merging of object and its ancestors' __ac_local_roles__.
+
+        When called with withgroups=1, the keys are
+        of the form user:foo and group:bar.
+        """
+        # XXX withpath must die soon...
+        # Modified from AccessControl.User.getRolesInContext().
+        merged = {}
+        object = getattr(object, 'aq_inner', object)
+
+        while 1:
+            if hasattr(object, '__ac_local_roles__'):
+                dict = object.__ac_local_roles__ or {}
+                if callable(dict):
+                    dict = dict()
+                for k, v in dict.items():
+                    if withgroups:
+                        k = 'user:'+k # groups
+                    if merged.has_key(k):
+                        merged[k] = merged[k] + v
+                    else:
+                        merged[k] = v
+            # deal with groups
+            if withgroups:
+                if hasattr(object, '__ac_local_group_roles__'):
+                    dict = object.__ac_local_group_roles__ or {}
+                    if callable(dict):
+                        dict = dict()
+                    for k, v in dict.items():
+                        k = 'group:'+k
+                        if merged.has_key(k):
+                            merged[k] = merged[k] + v
+                        else:
+                            merged[k] = v
+            # end groups
+            if hasattr(object, 'aq_parent'):
+                object = object.aq_parent
+                object = getattr(object, 'aq_inner', object)
+                continue
+            if hasattr(object, 'im_self'):
+                object = object.im_self
+                object = getattr(object, 'aq_inner', object)
+                continue
+            break
+
+        return merged
+
+    def _allowedRolesAndUsers(self, ob):
+        """
+        Return a list of roles, users and groups with View permission.
+        Used by PortalCatalog to filter out items you're not allowed to see.
+        """
+        allowed = {}
+        for r in rolesForPermissionOn('View', ob):
+            allowed[r] = 1
+        localroles = self.mergedLocalRoles(ob, withgroups=1) # groups
+        for user_or_group, roles in localroles.items():
+            for role in roles:
+                if allowed.has_key(role):
+                    allowed[user_or_group] = 1
+        if allowed.has_key('Owner'):
+            del allowed['Owner']
+        return list(allowed.keys())
+
+    #
+    # ZMI management
+    #
 
     security.declareProtected(EDIT_PERMISSION, 'manage_addLDAPSchemaItem')
     def manage_addLDAPSchemaItem( self

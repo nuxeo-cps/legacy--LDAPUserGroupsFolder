@@ -1275,7 +1275,7 @@ class LDAPUserFolder(BasicUserFolder):
         if not filter:
             filter = '(objectClass=*)'
 
-        from zLOG import LOG, DEBUG
+        from zLOG import LOG, DEBUG, ERROR
         LOG('_searchWithFilter', DEBUG, 'filter=%s attrs=%s' %
             (filter, attrs))
 

@@ -1,8 +1,8 @@
 ######################################################################
 #
-# LDAPUser	The User object for the LDAP User Folder
+# LDAPUser  The User object for the LDAP User Folder
 #
-# This software is governed by a license. See 
+# This software is governed by a license. See
 # LICENSE.txt for the terms of this license.
 #
 ######################################################################
@@ -52,7 +52,7 @@ class LDAPUser(BasicUser):
         self.usergroups = tuple(usergroups)
         self.computedgroups = tuple(computedgroups)
         self.domains = []
-        self.RID = '' 
+        self.RID = ''
         self.groups = ''
         now = time.time()
         self._created = now
@@ -334,14 +334,14 @@ class LDAPUser(BasicUser):
 
     security.declareProtected(access_contents_information, 'getProperty')
     def getProperty(self, prop_name, default=''):
-        """ 
+        """
             Return the user property referred to by prop_name,
             if the attribute is indeed public.
         """
         prop = self._properties.get(prop_name, default)
         if isinstance(prop, UnicodeType):
             prop = prop.encode(encoding)
-            
+
         return prop
 
 
@@ -368,10 +368,40 @@ class LDAPUser(BasicUser):
         """ When was this user object created? """
         return DateTime(self._created)
 
-
     #######################################################
     # CPS User properties extended API
     #######################################################
+    security.declareProtected(access_contents_information, 'listProperties')
+    def listProperties(self):
+        """Lists all properties that are set on the user."""
+        return self._properties.keys()
+
+    security.declareProtected(access_contents_information, 'hasProperty')
+    def hasProperty(self, id):
+        """Check for a property"""
+        return self._properties.has_key(id)
+
+    # def getProperty(self, id, default=None):
+    # Already defined above.
+
+    security.declareProtected(access_contents_information, 'getProperties')
+    def getProperties(self, ids):
+        """Returns the values of list of properties"""
+        res = {}
+        for id in ids:
+            res[id] = self.getProperty(id)
+        return res
+
+    security.declareProtected(manage_users, 'setProperty')
+    def setProperty(self, prop_name, prop_value):
+        """Sets the value of a property"""
+        user_dn = self.getUserDN()
+        aclu = self.acl_users
+        aclu.manage_setUserProperty(user_dn, prop_name, prop_value)
+        # Gotta set the new properties on myself too.
+        # To make sure it's syncronized, get it from the LDAP db.
+        user = aclu.getUserByDN(user_dn)
+        self._properties = user._properties.copy()
 
     security.declareProtected(manage_users, 'setProperties')
     def setProperties(self, **kw):
@@ -383,7 +413,6 @@ class LDAPUser(BasicUser):
         # To make sure it's syncronized, get it from the LDAP db.
         user = aclu.getUserByDN(user_dn)
         self._properties = user._properties.copy()
-
 
 InitializeClass(LDAPUser)
 

@@ -63,11 +63,14 @@ class TestLDAPUserFolder(unittest.TestCase):
                                 , dg('roles')
                                 , dg('groups_base')
                                 , dg('groups_scope')
+                                , dg('usergroups_base')
+                                , dg('usergroups_scope')
                                 , dg('binduid')
                                 , dg('bindpwd')
                                 , dg('binduid_usage')
                                 , dg('rdn_attr')
                                 , dg('local_groups')
+                                , dg('local_usergroups')
                                 , dg('use_ssl')
                                 , dg('encryption')
                                 , dg('read_only')
@@ -133,21 +136,24 @@ class TestLDAPUserFolder(unittest.TestCase):
     def testLUFEdit(self):
         acl = self.folder.acl_users
         ae = self.assertEqual
-        acl.manage_edit( ag('title')
-                       , ag('login_attr')
-                       , ag('users_base')
-                       , ag('users_scope')
-                       , ag('roles')
-                       , ag('groups_base')
-                       , ag('groups_scope')
-                       , ag('binduid')
-                       , ag('bindpwd')
-                       , ag('binduid_usage')
-                       , ag('rdn_attr')
-                       , ag('obj_classes')
-                       , ag('local_groups')
-                       , ag('encryption')
-                       , ag('read_only')
+        acl.manage_edit(  ag('title')
+                        , ag('login_attr')
+                        , ag('users_base')
+                        , ag('users_scope')
+                        , ag('roles')
+                        , ag('groups_base')
+                        , ag('groups_scope')
+                        , ag('usergroups_base')
+                        , ag('usergroups_scope')
+                        , ag('binduid')
+                        , ag('bindpwd')
+                        , ag('binduid_usage')
+                        , ag('rdn_attr')
+                        , ag('obj_classes')
+                        , ag('local_groups')
+                        , ag('local_usergroups')
+                        , ag('encryption')
+                        , ag('read_only')
                        )
         ae(acl.getProperty('title'), ag('title'))
         ae(acl.getProperty('_login_attr'), ag('login_attr'))
@@ -479,7 +485,6 @@ class TestLDAPUserFolder(unittest.TestCase):
 
     def testSetUserProperty(self):
         acl = self.folder.acl_users
-        ae = self.assertEqual
         msg = acl.manage_addUser(REQUEST=None, kwargs=manager_user)
         self.assert_(not msg)
         mgr_ob = acl.getUser(manager_user.get(acl.getProperty('_rdnattr')))
@@ -495,6 +500,52 @@ class TestLDAPUserFolder(unittest.TestCase):
         self.assertEqual( mgr_ob.getProperty('sn')
                         , 'NewLastName'
                         )
+        # Trying to set through the user object API.
+        mgr_ob.setProperty('sn', 'New')
+        self.assert_(mgr_ob.getProperty('sn') == 'New')
+        mgr_ob.setProperties(cn='NewCN', sn='Newer')
+        self.assert_(mgr_ob.getProperties( ('cn', 'sn')) == \
+                     {'cn': 'NewCN', 'sn': 'Newer'})
+
+    def testCPSRoleAPI(self):
+        aclu = self.folder.acl_users
+        msg = aclu.manage_addUser(REQUEST=None, kwargs=user)
+        self.assert_(not msg)
+        msg = aclu.manage_addUser(REQUEST=None, kwargs=manager_user)
+        self.assert_(not msg)
+        aclu.userFolderAddRole('Role1')
+        aclu.userFolderAddRole('Role2')
+        aclu.setRolesOfUser(('Role1', 'Role2'), 'mgr')
+        aclu.setUsersOfRole(('mgr', 'test'), 'Role1')
+        roles = list(aclu.getUser('mgr').getRoles())
+        roles.sort()
+        self.assert_(roles == ['Anonymous', 'Authenticated', 'Role1', 'Role2'])
+        owners = aclu.getUsersOfRole('Role1')
+        owners.sort()
+        self.assert_(owners == ['mgr', 'test'])
+        self.assert_(aclu.getUsersOfRole('Role2') == ['mgr'])
+
+
+    def testCPSGroupAPI(self):
+        aclu = self.folder.acl_users
+        msg = aclu.manage_addUser(REQUEST=None, kwargs=user)
+        self.assert_(not msg)
+        msg = aclu.manage_addUser(REQUEST=None, kwargs=manager_user)
+        self.assert_(not msg)
+        aclu.userFolderAddGroup('group1')
+        aclu.userFolderAddGroup('group2')
+        self.assert_(aclu.getGroupById('group1') is not None)
+        groups = list(aclu.getGroupNames())
+        groups.sort()
+        self.assert_(groups == ['group1', 'group2'])
+        aclu.setGroupsOfUser(['group1', 'group2'], 'test')
+        aclu.setUsersOfGroup(['test', 'mgr'], 'group1')
+        users = aclu.getUsersOfGroup('group1')
+        users.sort()
+        self.assert_(users == ['mgr', 'test'])
+        groups = list(aclu.getUser('test').getGroups())
+        groups.sort()
+        self.assert_(groups == ['group1', 'group2'])
 
 
 def test_suite():

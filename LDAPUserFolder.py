@@ -1,6 +1,6 @@
 #####################################################################
 #
-# LDAPUserGroupsFolder	An LDAP-based user source for Zope
+# LDAPUserGroupsFolder  An LDAP-based user source for Zope
 #
 # This product includes software developed by Jens Vagelpohl for use in
 # the Z Object Publishing Environment (http://www.zope.org/).
@@ -52,10 +52,10 @@ EDIT_PERMISSION = 'Change user folder'
 
 
 class LDAPUserFolder(BasicUserFolder):
-    """ 
+    """
         LDAPUserFolder
 
-        The LDAPUserFolder is a user database.  It contains management 
+        The LDAPUserFolder is a user database.  It contains management
         hooks so that it can be added to a Zope folder as an 'acl_users'
         database.  Its important public method is validate() which
         returns a Zope user object of type LDAPUser
@@ -75,7 +75,7 @@ class LDAPUserFolder(BasicUserFolder):
 
     manage_options=(
         (
-        {'label' : 'Configure',	'action' : 'manage_main',
+        {'label' : 'Configure', 'action' : 'manage_main',
          'help'  : ('LDAPUserGroupsFolder','Configure.stx')},
         {'label' : 'LDAP Schema', 'action' : 'manage_ldapschema',
          'help'  : ('LDAPUserGroupsFolder', 'Schema.stx')},
@@ -91,16 +91,16 @@ class LDAPUserFolder(BasicUserFolder):
          'help'  : ('LDAPUserGroupsFolder', 'Log.stx')},
         )
         + SimpleItem.manage_options
-        ) 
+        )
 
     security.declareProtected(view_management_screens, 'manage')
     security.declareProtected(view_management_screens, 'manage_main')
     manage = manage_main = DTMLFile('dtml/properties', globals())
     manage_main._setName('manage_main')
-    
+
     security.declareProtected(view_management_screens, 'manage_ldapschema')
     manage_ldapschema = DTMLFile('dtml/ldapschema', globals())
-    
+
     security.declareProtected(view_management_screens, 'manage_log')
     manage_log = DTMLFile('dtml/log', globals())
 
@@ -109,7 +109,7 @@ class LDAPUserFolder(BasicUserFolder):
 
     security.declareProtected(view_management_screens, 'manage_userrecords')
     manage_userrecords = DTMLFile('dtml/users', globals())
-    
+
     security.declareProtected(view_management_screens, 'manage_grouprecords')
     manage_grouprecords = DTMLFile('dtml/groups', globals())
 
@@ -325,7 +325,7 @@ class LDAPUserFolder(BasicUserFolder):
                 msg = '_lookupuser: "%s" lookup fails bound as "%s"' % (dn, dn)
                 self.verbose > 3 and self._log.log(4, msg)
                 return None, None, None, None
-            
+
             user_attrs = auth_res['results'][0]
 
         else:
@@ -449,7 +449,7 @@ class LDAPUserFolder(BasicUserFolder):
                                          , friendly_name=login_attr
                                          )
         self._login_attr = login_attr
-        
+
         self._clearCaches()
         self.verbose > 1 and self._log.log(2, 'Properties changed')
         msg = 'Properties changed'
@@ -537,8 +537,16 @@ class LDAPUserFolder(BasicUserFolder):
         else:
             wanted_attrs = [login_attr]
 
+        filter_elems=[]
+        for objclass in self._user_objclasses:
+            filter_elems.append('(objectClass=%s)' % objclass)
+        filter = ''.join(filter_elems)
+        if len(filter_elems) > 1:
+            filter = '(&%s)' % filter
+
         res = self._delegate.search( base=self.users_base
                                    , scope=self.users_scope
+                                   , filter=filter
                                    , attrs=wanted_attrs
                                    )
 
@@ -644,7 +652,7 @@ class LDAPUserFolder(BasicUserFolder):
             return self.getUser(id)
 
         except:
-            if default is _marker: 
+            if default is _marker:
                 raise
 
             return default
@@ -681,7 +689,7 @@ class LDAPUserFolder(BasicUserFolder):
             domains = user.getDomains()
             if domains:
                 return (domainSpecMatch(domains, request) and user) or None
-            
+
         return user
 
 
@@ -829,7 +837,7 @@ class LDAPUserFolder(BasicUserFolder):
         for dn in all_dns.keys():
             try:
                 user = self.getUserByDN(dn)
-            except: 
+            except:
                 user = None
 
             if user is not None:
@@ -946,7 +954,7 @@ class LDAPUserFolder(BasicUserFolder):
                     group_filter += fltr
 
                 group_filter += ')'
-                    
+
             else:
                 group_filter = '(|'
 
@@ -1182,7 +1190,7 @@ class LDAPUserFolder(BasicUserFolder):
         """ Perform the mapping of LDAP groups to Zope roles """
         mappings = getattr(self, '_groups_mappings', {})
         roles = []
-        
+
         for group in groups:
             roles.append(group)
             mapped_role = mappings.get(group, None)
@@ -1333,6 +1341,20 @@ class LDAPUserFolder(BasicUserFolder):
             # for all entries.
 
         return results
+
+    #
+    # acl_user standards that is not implemented in the
+    # standard LDAPUserFolder
+    #
+
+    def _doChangeUser(self, name, password, roles, domains, **kw):
+        user=self.getUser(name)
+        user_dn = user.getUserDN()
+        if password is not None:
+            self.manage_editUserPassword(user_dn, password)
+        if roles is not None:
+            self.manage_editUserRoles(user_dn, roles)
+        # There seem to be no domain support in LDAPUserFolder
 
     #
     # Extended User Folder API
@@ -1575,8 +1597,9 @@ class LDAPUserFolder(BasicUserFolder):
     security.declareProtected(manage_users, 'userFolderAddRole')
     def userFolderAddRole(self, role):
         """Add a new role."""
-        # XXX Should it also be added to the container as zope roles?
         self.manage_addGroup(role)
+        portal = self.aq_inner.aq_parent
+        portal._addRole(role)
 
 
     security.declareProtected(manage_users, 'userFolderAddGroup')
@@ -1757,7 +1780,7 @@ class LDAPUserFolder(BasicUserFolder):
             msg = 'LDAP Schema item "%s" added' % ldap_name
         else:
             msg = 'LDAP Schema item "%s" already exists'  % ldap_name
- 
+
         if REQUEST:
             return self.manage_ldapschema(manage_tabs_message=msg)
 
@@ -1767,7 +1790,7 @@ class LDAPUserFolder(BasicUserFolder):
         """ Delete schema items from my list of known schema items """
         if len(ldap_names) < 1:
             msg = 'Please select items to delete'
- 
+
         else:
             schema = self.getSchemaConfig()
             removed = []
@@ -1776,12 +1799,12 @@ class LDAPUserFolder(BasicUserFolder):
                 if ldap_name in schema.keys():
                     removed.append(ldap_name)
                     del schema[ldap_name]
- 
+
             self.setSchemaConfig(schema)
 
             rem_str = ', '.join(removed)
             msg = 'LDAP Schema items %s removed.' % rem_str
- 
+
         if REQUEST:
             return self.manage_ldapschema(manage_tabs_message=msg)
 
@@ -1795,7 +1818,7 @@ class LDAPUserFolder(BasicUserFolder):
         """ Add a new group in groups_base """
         if self._local_groups and newgroup_name:
             add_groups = self._additional_groups
-            
+
             if newgroup_name not in add_groups:
                 add_groups.append(newgroup_name)
 
@@ -1875,6 +1898,14 @@ class LDAPUserFolder(BasicUserFolder):
         if REQUEST:
             return self.manage_usergrouprecords(manage_tabs_message=msg)
 
+    def _doAddUser(self, name, password, roles, domains, **kw):
+        kw[self._login_attr] = name
+        if not kw.has_key(self._rdnattr):
+            kw[self._rdnattr] = kw.get('fullname', name)
+        kw['user_pw'] = password
+        kw['confirm_pw'] = password
+        kw['user_roles'] = roles
+        self.manage_addUser(kwargs=kw)
 
     # Standard user folder compatibility.
     security.declarePrivate('_addUser')
@@ -1910,7 +1941,7 @@ class LDAPUserFolder(BasicUserFolder):
         """ Add a new user record to LDAP """
         base = self.users_base
         attr_dict = {}
-        
+
         if REQUEST is None:
             source = kwargs
         else:
@@ -1925,7 +1956,7 @@ class LDAPUserFolder(BasicUserFolder):
         password = source.get('user_pw', '')
         confirm  = source.get('confirm_pw', '')
 
-        if password != confirm or password == '': 
+        if password != confirm or password == '':
             msg = 'The password and confirmation do not match!'
 
         else:
@@ -1956,7 +1987,7 @@ class LDAPUserFolder(BasicUserFolder):
                 return self.manage_userrecords(manage_tabs_message=msg)
             else:
                 return msg
-                
+
 
         if not msg:
             user_dn = '%s,%s' % (rdn, base)
@@ -2054,7 +2085,7 @@ class LDAPUserFolder(BasicUserFolder):
 
             msg = msg or 'Deleted group(s):<br> %s' % '<br>'.join(dns)
             self._clearCaches()
- 
+
         if REQUEST:
             return self.manage_grouprecords(manage_tabs_message=msg)
 
@@ -2124,7 +2155,7 @@ class LDAPUserFolder(BasicUserFolder):
 
         elif self._delegate.read_only:
             msg = 'Running in read-only mode, deletion is disabled'
-        
+
         else:
             for dn in dns:
                 msg = self._delegate.delete(dn)
@@ -2204,6 +2235,29 @@ class LDAPUserFolder(BasicUserFolder):
                                           , user_dn=dn
                                           )
 
+    security.declareProtected(manage_users, 'setRolesOfUser')
+    def setRolesOfUser(self, roleids, username):
+        user = self.getUser(username)
+        user_dn = user.getUserDN()
+        return self.manage_editUserRoles(user_dn, list(roleids))
+
+    def setUsersOfRole(self, userids, roleid):
+        userswithrole = self.getUsersOfRole(roleid)
+        for user in userswithrole:
+            if user not in userids:
+                roles = list(self.getUser(user).getGroups())
+                roles.remove(roleid)
+                self.setGroupsOfUser(roles, user)
+
+        for user in userids:
+            if user not in userswithrole:
+                roles = list(self.getUser(user).getGroups())
+                roles.append(roleid)
+                self.setGroupsOfUser(roles, user)
+
+    security.declareProtected(manage_users, 'setGroupsOfUser')
+    def getUsersOfRole(self, roleid):
+        return self.searchUsers({'roles': [roleid]})
 
     security.declareProtected(manage_users, 'manage_editUserRoles')
     def manage_editUserRoles(self, user_dn, role_dns=[], REQUEST=None):
@@ -2220,7 +2274,8 @@ class LDAPUserFolder(BasicUserFolder):
 
         if self._local_groups:
             if len(role_dns) == 0:
-                del self._groups_store[user_dn]
+                if self._groups_store.has_key(user_dn):
+                    del self._groups_store[user_dn]
             else:
                 self._groups_store[user_dn] = role_dns
 
@@ -2291,7 +2346,6 @@ class LDAPUserFolder(BasicUserFolder):
                                  (usergroup, self.usergroups_base))
             else:
                 group_dns.append(usergroup)
-
         if self._local_usergroups:
             if len(usergroup_dns) == 0:
                 if self._usergroups_store.has_key(user_dn):
@@ -2342,7 +2396,7 @@ class LDAPUserFolder(BasicUserFolder):
             exc = cur_rec['exception']
             msg = 'manage_setUserProperty: No user "%s" (%s)' % (user_dn, exc)
             self.verbose > 1 and self._log.log(2, msg)
-                                                                
+
             return
 
         user_rec = cur_rec['results'][0]
@@ -2358,7 +2412,7 @@ class LDAPUserFolder(BasicUserFolder):
                                            , mod_type=mod
                                            , attrs={prop_name:prop_value}
                                            )
-            
+
             if not err_msg:
                 user_obj = self.getUserByDN(user_dn)
                 self._expireUser(user_obj)
@@ -2481,10 +2535,10 @@ class LDAPUserFolder(BasicUserFolder):
 
     security.declareProtected(manage_users, 'isUnique')
     def isUnique(self, attr, value):
-        """ 
+        """
             Find out if any objects have the same attribute value.
             This method should be called when a new user record is
-            about to be created. It guards uniqueness of names by 
+            about to be created. It guards uniqueness of names by
             warning for items with the same name.
         """
         search_str = filter_format('(%s=%s)', (attr, str(value)))
@@ -2571,9 +2625,9 @@ def manage_addLDAPUserGroupsFolder( self, title, LDAP_server, login_attr
 
         this_folder._setObject('acl_users', n)
         this_folder.__allow_groups__ = self.acl_users
-        
+
         msg = 'Added+LDAPUserGroupsFolder'
- 
+
     # return to the parent object's manage_main
     if REQUEST:
         url = REQUEST['URL1']

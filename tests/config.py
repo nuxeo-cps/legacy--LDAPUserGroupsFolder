@@ -18,11 +18,14 @@ defaults = { 'title'  : 'LDAP User Folder'
            , 'roles' : 'Anonymous'
            , 'groups_base' : 'ou=groups,dc=dataflake,dc=org'
            , 'groups_scope' : 2
+           , 'usergroups_base' : 'ou=groups,dc=dataflake,dc=org'
+           , 'usergroups_scope' : 2
            , 'binduid' : 'cn=Manager,dc=dataflake,dc=org'
            , 'bindpwd' : 'mypass'
            , 'binduid_usage' : 1
            , 'rdn_attr' : 'cn'
            , 'local_groups' : 0
+           , 'local_usergroups' : 0
            , 'use_ssl' : 0
            , 'encryption' : 'SHA'
            , 'read_only' : 0
@@ -36,11 +39,14 @@ alternates = { 'title'  : 'LDAPUserFolder'
              , 'roles' : 'Anonymous, SpecialRole'
              , 'groups_base' : 'ou=groups,dc=type4,dc=org'
              , 'groups_scope' : 0
+             , 'usergroups_base' : 'ou=groups,dc=type4,dc=org'
+             , 'usergroups_scope' : 0
              , 'binduid' : 'cn=Manager,dc=type4,dc=org'
              , 'bindpwd' : 'testpass'
              , 'binduid_usage' : 2
              , 'rdn_attr' : 'uid'
              , 'local_groups' : 1
+             , 'local_usergroups' : 1
              , 'use_ssl' : 1
              , 'encryption' : 'SSHA'
              , 'read_only' : 1

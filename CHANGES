@@ -6,7 +6,13 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Correctly work with groups stored in the ZODB.
+- getUserNames now applies an objecClass filter to only return users.
+- If a user doesn't have a role or group and should be deleted from local roles or groups, it is checked that the user exists before tryng to delete.
+- When a role is created, it's now added to the portal as well.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- In some cases correctly normalize DNs that contain spaces.
+- Implemented mergedLocalRolesWithPath and removed optional argument
+  withpath from mergedLocalRoles
+- _doAddUser implemented.

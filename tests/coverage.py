@@ -166,6 +166,12 @@ class coverage:
                       "or -a.")
         if not args_needed and args:
             self.help("Unexpected arguments %s." % args)
+        
+        if sys.platform == 'win32':
+            # The Windows shell does not expand wildcards, so we need to.
+            import glob
+            args = glob.glob(args[0])
+            
         if settings.get('erase'):
             self.erase()
         if settings.get('execute'):

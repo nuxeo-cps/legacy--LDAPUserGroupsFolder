@@ -38,6 +38,8 @@ class TestLDAPUser(unittest.TestCase):
                             , ug('user_pw')
                             , ug('user_roles')
                             , []
+                            , []
+                            , []
                             , 'cn=%s,%s' % (ug('cn'), dg('users_base'))
                             , { 'cn' : [ug('cn')]
                               , 'sn' : [ug('sn')]
@@ -78,6 +80,29 @@ class TestLDAPUser(unittest.TestCase):
         for mv in multivals:
             assert(type(u.getProperty(mv)) in (ListType, TupleType))
 
+    def testPropertyGetting(self):
+        user = self.u_ob
+        expected_props = {'cn': 'test',
+                          'givenName': 'Test',
+                          'objectClasses': ['top', 'person'],
+                          'Objektklassen': ['top', 'person'],
+                          'sn': 'User',
+                          'dn': 'cn=test,ou=people,dc=dataflake,dc=org',
+                         }
+
+        a = user.listProperties()
+        b = expected_props.keys()
+        a.sort()
+        b.sort()
+        self.assert_(a == b)
+
+        for prop in expected_props.keys():
+            self.assert_(user.hasProperty(prop))
+            self.assert_(user.getProperty(prop) == expected_props[prop])
+
+        self.assert_(user.getProperties(user.listProperties()) == \
+            expected_props)
+
 
 def test_suite():
     suite = unittest.TestSuite()
@@ -87,4 +112,4 @@ def test_suite():
 
 if __name__ == '__main__':
     unittest.main(defaultTest='test_suite')
-    
+

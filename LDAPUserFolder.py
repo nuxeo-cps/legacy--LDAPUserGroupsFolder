@@ -1083,9 +1083,9 @@ class LDAPUserFolder(BasicUserFolder):
         """ get the type of user group """
         if self._local_usergroups:
             if usergroup_dn in self._additional_usergroups:
-                group_type = 'Custom Group'
+                usergroup_type = 'Custom Group'
             else:
-                group_type = 'Zope Built-in Group'
+                usergroup_type = 'Zope Built-in Group'
 
         else:
             usergroup_type = 'n/a'

@@ -80,13 +80,6 @@ class LDAPUser(BasicUser):
     # User interface not implemented in class BasicUser
     #######################################################
 
-    security.declarePrivate('setSecurityProfile')
-    def setSecurityProfile(self, password=None, roles=None, domains=None):
-        """Set the user's basic security profile"""
-        aclu = self.acl_users
-        aclu._doChangeUser(self.getUserName(), password, roles, domains)
-
-
     security.declarePrivate('_getPassword')
     def _getPassword(self):
         """ Retrieve the password """

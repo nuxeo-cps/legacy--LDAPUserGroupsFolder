@@ -1511,7 +1511,9 @@ class LDAPUserFolder(BasicUserFolder):
                 users[user_id] = None
         users = users.keys()
 
-        return CPSGroup(groupname, users)
+        groups = () # subgroups
+
+        return CPSGroup(groupname, users, groups)
 
 
     security.declareProtected(manage_users, 'userFolderAddRole')

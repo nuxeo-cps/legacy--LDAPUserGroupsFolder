@@ -9,4 +9,5 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- searchUsers() : Check if restricted_search_member_list is specified within the options. 
+  In this case it means the search results must restricted to that list

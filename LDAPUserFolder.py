@@ -610,7 +610,9 @@ class LDAPUserFolder(BasicUserFolder):
         else:
             self._anonymous_cache.set(name, user_obj)
 
-        return user_obj
+        if user_obj:
+            return user_obj.__of__(self)
+        return None
 
 
     security.declareProtected(manage_users, 'getUserById')

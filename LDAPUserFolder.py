@@ -1627,6 +1627,11 @@ class LDAPUserFolder(BasicUserFolder):
         user = getSecurityManager().getUser()
         return self.portal_catalog._listAllowedRolesAndUsers(user)
 
+    security.declarePublic('hasLocalRolesBlocking')
+    def hasLocalRolesBlocking(self):
+        """Is local roles blocking implemented in this user folder."""
+        return 1
+
     security.declareProtected(manage_users, 'userFolderAddRole')
     def userFolderAddRole(self, role):
         """Add a new role."""

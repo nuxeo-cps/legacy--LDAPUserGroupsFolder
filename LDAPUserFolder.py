@@ -1285,10 +1285,11 @@ class LDAPUserFolder(BasicUserFolder):
                                     attrs=attrs)
         err = res['exception']
         if err:
-            msg = "searchUsers Exception (%s)" % err
             if self.verbose > 1:
+                msg = "_searchWithFilter Exception (%s)" % err
                 self._log.log(2, msg)
-            return err
+            LOG('searchUsers', ERROR, err)
+            raise ValueError(err)
 
         results = res['results']
 
@@ -1432,16 +1433,6 @@ class LDAPUserFolder(BasicUserFolder):
                                          roles=query.get('roles'),
                                          groups=query.get('groups'),
                                          attrs=attrs)
-
-        if isinstance(results, StringType):
-            err = results
-            msg = "searchUsers Exception (%s)" % err
-            if self.verbose > 1:
-                self._log.log(2, msg)
-            if props is None:
-                return [err]
-            else:
-                return [(err, {})]
 
         # Prepare the results.
 

@@ -1284,14 +1284,14 @@ class LDAPUserFolder(BasicUserFolder):
 
             # Intersect dns
             if roles and not groups:
-                dns = roles_dns
+                dns = role_dns
             elif groups and not roles:
                 dns = group_dns
             else: # roles and groups
-                if len(roles_dns) < len(group_dns):
-                    small, big = roles_dns, group_dns
+                if len(role_dns) < len(group_dns):
+                    small, big = role_dns, group_dns
                 else:
-                    small, big = group_dns, roles_dns
+                    small, big = group_dns, role_dns
                 # Intersect
                 dns = {}
                 for dn in small.keys():
@@ -1300,6 +1300,10 @@ class LDAPUserFolder(BasicUserFolder):
 
             # Filter by those dns.
             results = [e for e in results if dns.has_key(e['dn'])]
+
+            # XXX FIXME The results entries are missing roles and groups
+            # props (if in attrs)... But fixing it means requerying them
+            # for all entries.
 
         return results
 
@@ -1310,7 +1314,12 @@ class LDAPUserFolder(BasicUserFolder):
     def listUserProperties(self):
         """Lists properties settable or searchable on the users."""
         schema = self.getSchemaConfig()
-        attrs = {'dn': None, 'id': None}
+        attrs = {
+            'id': None,
+            'roles': None,
+            'groups': None,
+            'dn': None,
+            }
         for attr, names in schema.items():
             attrs[attr] = None
             if names.get('public_name'):
@@ -1338,6 +1347,9 @@ class LDAPUserFolder(BasicUserFolder):
         filter_elems = []
         for key, value in query.items():
             if key not in allowed_props:
+                continue
+            if key in ('roles', 'groups'):
+                # Treated specially.
                 continue
             if key == 'dn': # XXX treat it
                 continue

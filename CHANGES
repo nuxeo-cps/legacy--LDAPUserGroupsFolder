@@ -8,7 +8,7 @@ New features:
 
 Bug fixes:
 ~~~~~~~~~~
--
+- Correctly work with groups stored in the ZODB.
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~

@@ -4,7 +4,7 @@ ZODB Requires:
 
 New features:
 ~~~~~~~~~~~~~
--
+- Now based on LDAPUserFolder 2.3.
 
 Bug fixes:
 ~~~~~~~~~~

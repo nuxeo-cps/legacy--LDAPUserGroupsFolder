@@ -9,7 +9,7 @@
 #####################################################################
 __version__='$Revision$'[11:-2]
 
-import ldap, sha, base64
+import ldap, sha, base64, copy
 
 # Module-level stuff
 __version__ = '2.fake'
@@ -220,7 +220,7 @@ class FakeLDAPConnection:
             if tree_pos.has_key(elem):
                 tree_pos = tree_pos[elem]        
 
-        rec = tree_pos.get(rdn)
+        rec = copy.deepcopy(tree_pos.get(rdn))
 
         for mod in mod_list:
             if mod[0] == MOD_REPLACE:

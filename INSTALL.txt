@@ -1,7 +1,9 @@
 Installing the LDAPUserFolder Product
 
     You will need Zope version 2.4.0 or higher (which necessitates
-    Python version 2.0 or higher)!
+    Python version 2.0 or higher)! You will also need a (working)
+    python-ldap module installed for the python binary that is used
+    to run your Zope install, see "Important Hints" below.
 
     This product does not require any special handling after unzipping
     and untarring it in the Zope Products directory. You should do 
@@ -34,7 +36,7 @@ Installing the LDAPUserFolder Product
 
     The first step after compiling the python-ldap module is to find 
     out if it works correctly by firing up your python interpreter 
-    and typing "import _ldap". Then hit return. If no error message shows 
+    and typing "import ldap". Then hit return. If no error message shows 
     up the module is compiled and installed correctly.
 
     If after correctly installing and compiling the python-ldap 
@@ -57,10 +59,5 @@ Installing the LDAPUserFolder Product
     This module can be copied into the LDAPUserFolder folder on the file 
     system.
 
-    If you run the LDAP server on the same machine as your Zope instance and 
-    use python-ldap 2.0.0pre1-2.0.0pre4 you might experience severe slowdowns
-    due to a bug in those python-ldap versions. See this URL for more info::
-
-      http://www.geocrawler.com/archives/3/1568/2002/6/0/9027164/
-
     See README.txt for any other dependencies and requirements.
+

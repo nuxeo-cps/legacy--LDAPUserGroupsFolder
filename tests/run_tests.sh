@@ -16,7 +16,7 @@ export INSTANCE_HOME=/usr/local/zope/InstanceHome
 
 # The Zope Software Home. This must point to the lib/python-directory
 # inside your Zope installation.
-export SOFTWARE_HOME=/usr/local/zope/opt/Zope-2_7-branch
+export SOFTWARE_HOME=/usr/local/zope/opt/Zope-2_7-branch/lib/python
 
 # The directory where the LDAPUserFolder software is installed
 LUF_SOFTWARE_HOME=/usr/local/zope/Products/LDAPUserFolder

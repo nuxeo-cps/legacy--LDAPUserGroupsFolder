@@ -124,6 +124,7 @@ class LDAPDelegate(Persistent):
                 new_servers.append(old_servers[i])
 
         self._servers = new_servers
+        self._v_conn = None
 
 
     def edit( self, login_attr, users_base, rdn_attr, objectclasses

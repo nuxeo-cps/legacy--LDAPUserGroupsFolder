@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- Removing a VERSION.txt file that should not be there.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

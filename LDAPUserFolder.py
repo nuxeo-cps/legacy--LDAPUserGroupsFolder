@@ -1350,6 +1350,17 @@ class LDAPUserFolder(BasicUserFolder):
         query = kw
         self._removeMappedPropertiesFromEntry(query, mapped)
 
+        # If any default roles are set, delete them from the roles selected
+        # in the query, to return all otherwise matching users.
+        roles = query.get('roles')
+        for role in self._roles:
+            if role in roles:
+                roles.remove(role)
+        if roles:
+            query['roles'] = roles
+        else:
+            del query['roles']
+
         filter_elems = []
         for key, value in query.items():
             if key not in allowed_props:
@@ -1392,7 +1403,6 @@ class LDAPUserFolder(BasicUserFolder):
         login_attr = self._login_attr
         if login_attr not in attrs:
             attrs.append(login_attr)
-
         results = self._searchWithFilter(filter,
                                          roles=query.get('roles'),
                                          groups=query.get('groups'),
@@ -1420,6 +1430,7 @@ class LDAPUserFolder(BasicUserFolder):
         users = []
         for e in results:
             entry = {}
+            id = None
             for attr, value in e.items():
                 if attr == 'dn':
                     pass
@@ -1430,6 +1441,8 @@ class LDAPUserFolder(BasicUserFolder):
                 entry[attr] = value
                 if attr == login_attr:
                     id = value
+            if not id:
+                continue
             self._addMappedPropertiesToEntry(entry, mapped)
             users.append((id, entry))
 

@@ -1420,6 +1420,9 @@ class LDAPUserFolder(BasicUserFolder):
                 continue
             if key == 'dn': # XXX treat it
                 continue
+            if isinstance(value, IntType):
+                # this handle case when using boolean widget for searching
+                value = str(value)
             if not value:
                 continue
             if value == '*':

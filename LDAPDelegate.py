@@ -18,7 +18,6 @@ from AccessControl.SecurityManagement import getSecurityManager
 
 # LDAPUserFolder package imports
 from utils import to_utf8, from_utf8
-from zLOG import LOG, DEBUG
 
 try:
     from ldapurl import LDAPUrl
@@ -260,12 +259,8 @@ class LDAPDelegate(Persistent):
                  , 'results' : []
                  }
         filter = to_utf8(filter)
-        LOG('search', DEBUG, "XXX filter = %s" % str(filter))
 
         try:
-            if filter == "(&(mail=*big*)(objectClass=top)(objectClass=person))":
-                raise ldap.SIZELIMIT_EXCEEDED
-
             connection = self.connect(bind_dn=bind_dn, bind_pwd=bind_pwd)
             if connection is None:
                 result['exception'] = 'Cannot connect to LDAP server'

@@ -1513,9 +1513,9 @@ class LDAPUserFolder(BasicUserFolder):
                 users[user_id] = None
         users = users.keys()
 
-        groups = () # subgroups
+        subgroups = ()
 
-        return CPSGroup(groupname, users, groups)
+        return CPSGroup(groupname, users, subgroups).__of__(self)
 
 
     security.declareProtected(manage_users, 'userFolderAddRole')
@@ -1654,6 +1654,22 @@ class LDAPUserFolder(BasicUserFolder):
         if allowed.has_key('Owner'):
             del allowed['Owner']
         return list(allowed.keys())
+
+    def _getAllowedRolesAndUsers(self, user):
+        """Get the current roles a user has."""
+        result = list(user.getRoles())
+        result.append('Anonymous')
+        result.append('user:%s' % user.getUserName())
+        # deal with groups
+        getGroups = getattr(user, 'getGroups', None)
+        if getGroups is not None:
+            groups = user.getGroups() + ('role:Anonymous',)
+            if 'Authenticated' in result:
+                groups = groups + ('role:Authenticated',)
+            for group in groups:
+                result.append('group:%s' % group)
+        # end groups
+        return result
 
     #
     # ZMI management

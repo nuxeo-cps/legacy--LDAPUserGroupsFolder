@@ -10,7 +10,7 @@ __version__='$Revision$'[11:-2]
 
 # General python imports
 import sys, ldap
-from types import StringType
+from types import DictType, StringType
 
 # Zope imports
 from Persistence import Persistent
@@ -106,7 +106,7 @@ class LDAPDelegate(Persistent):
         """ Return info about all my servers """
         servers = getattr(self, '_servers', [])
 
-        if type(servers) == type({}):
+        if isinstance(servers, DictType):
             servers = servers.values()
             self._servers = servers
 
@@ -139,7 +139,7 @@ class LDAPDelegate(Persistent):
         self.read_only = not not read_only
         self.u_base = users_base
 
-        if type(objectclasses) is StringType:
+        if isinstance(objectclasses, StringType):
             objectclasses = [x.strip() for x in objectclasses.split(',')]
         self.u_classes = objectclasses
 
@@ -313,7 +313,7 @@ class LDAPDelegate(Persistent):
             return 'Running in read-only mode, insertion is disabled'
 
         msg = ''
-        dn = '%s,%s' % (rdn, base)
+        dn = to_utf8('%s,%s' % (rdn, base))
         attribute_list = []
         attrs = attrs and attrs or {}
 
@@ -382,7 +382,8 @@ class LDAPDelegate(Persistent):
         if self.read_only:
             return 'Running in read-only mode, modification is disabled'
 
-        res = self.search(base=dn, scope=BASE)
+        utf8_dn = to_utf8(dn)
+        res = self.search(base=utf8_dn, scope=BASE)
         attrs = attrs and attrs or {}
 
         if res['exception']:
@@ -412,10 +413,21 @@ class LDAPDelegate(Persistent):
 
         try:
             connection = self.connect()
-            connection.modify_s(dn, mod_list)
+
+            new_rdn = attrs.get(self.rdn_attr, [''])[0]
+            if new_rdn and new_rdn != cur_rec.get(self.rdn_attr)[0]:
+                new_utf8_rdn = to_utf8('%s=%s' % (self.rdn_attr, new_rdn))
+                connection.modrdn_s(utf8_dn, new_utf8_rdn)
+                old_dn_exploded = explode_dn(utf8_dn)
+                old_dn_exploded[0] = new_utf8_rdn
+                utf8_dn = ','.join(old_dn_exploded)
+
+            connection.modify_s(utf8_dn, mod_list)
+
         except ldap.INVALID_CREDENTIALS, e:
             e_name = e.__class__.__name__
             msg = '%s No permission to modify "%s"' % (e_name, dn)
+
         except ldap.REFERRAL, e:
             try:
                 connection = self.handle_referral(e)
@@ -426,37 +438,10 @@ class LDAPDelegate(Persistent):
             except Exception, e:
                 e_name = e.__class__.__name__
                 msg = '%s LDAPDelegate.modify: %s' % (e_name, str(e))
+
         except Exception, e:
             e_name = e.__class__.__name__
             msg = '%s LDAPDelegate.modify: %s' % (e_name, str(e))
 
-        if msg:
-            return msg
-
-        rdn = explode_dn(dn)[0]
-        rdn_attr = rdn[:rdn.find('=')]
-        new_rdn = attrs.get(rdn_attr, [''])[0]
-
-        if new_rdn and new_rdn != cur_rec.get(rdn_attr)[0]:
-            new_dn = '%s=%s' % (rdn_attr, new_rdn)
-            try:
-                connection.modrdn_s(dn, new_dn, 0)
-            except ldap.INVALID_CREDENTIALS, e:
-                e_name = e.__class__.__name__
-                msg = '%s No permission to modify "%s"' % (e_name, dn)
-            except ldap.REFERRAL, e:
-                try:
-                    connection = self.handle_referral(e)
-                    connection.modrdn_s(dn, new_dn, 0)
-                except ldap.INVALID_CREDENTIALS, e:
-                    e_name = e.__class__.__name__
-                    msg = '%s No permission to modify "%s"' % (e_name, dn)
-                except Exception, e:
-                    e_name = e.__class__.__name__
-                    msg = '%s LDAPDelegate.modify: %s' % (e_name, str(e))
-            except Exception, e:
-                e_name = e.__class__.__name__
-                msg = '%s LDAPDelegate.modify: %s' % (e_name, str(e))
-
-
         return msg
+

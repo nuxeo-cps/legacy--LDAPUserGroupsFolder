@@ -29,26 +29,10 @@ README for the Zope LDAPUserGroupsFolder Product
 
   **Custom login page**
 
-    Cookie support has been removed for version 2.0 of the LDAPUserFolder.
-    If you want cookie authentication I recommend installing the 
-    CookieCrumbler product alongside the LDAPUserFolder to handle all
-    your cookie needs.
-
-
-  **Limited non-ASCII character support**
-
-    If your version of python is unicode-enabled (versions after
-    1.6) the product will now let you use the full Latin-1
-    character set within LDAP attribute values and handle them
-    correctly.
-
-    The exception to this rule is the Distinguished Name (DN) of
-    a record and all its elements. This means the attribute you
-    chose as RDN-attribute (cn or uid) must contain only ASCII-
-    characters, as well as all other attributes that are contained
-    in the DN, such as ou or o or dc etc.
-
-    **Note**: The UTF-8 encoding will not work with OpenLDAP 1.x
+    If you want custom login pages instead of the standard authentication
+    popup dialogs I recommend installing the CookieCrumbler product 
+    alongside the LDAPUserFolder which provides cookie authentication
+    functionality for user folders.
 
 
   **Why does the LDAPUserFolder not show all my LDAP groups?**
@@ -84,17 +68,12 @@ README for the Zope LDAPUserGroupsFolder Product
 
   **Note about multi-valued attributes**
 
-    While the record management in the Zope Management Interface 
-    allows handling of multi-valued attributes user objects themselves
-    will not contain the full number of these attributes. I made the
-    design decision to only only expose the first value for any
-    multi-valued attribute because having user attributes that are
-    sequences is unprecedented and carries the risk of breaking a 
-    lot of unrelated code that works with the user object. There is 
-    also no canonical way of encoding such a sequence like it is being
-    done in the LDAPUserFolder ZMI views (it is being turned into a 
-    semicolon-separated string), so even doing it that way would be
-    unexpected for code outside of the LDAPUserFolder itself.
+    If you want your user objects to expose the full sequence of values
+    for a multi-valued attribute field you need to explicitly "bless"
+    that attribute as Multi-valued on the "LDAP Schema" management tab.
+    Multi-valued attributes will show up as a semicolon-separated string
+    in the Zope Management interface itself. The user object carries these
+    attrinutes as a list.
 
 
   **Why use LDAP to store user records?**
@@ -136,25 +115,12 @@ README for the Zope LDAPUserGroupsFolder Product
   **Tested Platforms**
 
     This version of the LDAPUserFolder has been written on and for 
-    Zope 2.4.0 and up. I am not going to support earlier versions of
-    Zope with my product. I have run the LDAPUserFolder successfully
-    on...
+    Zope 2.4.0 and up. I have run the LDAPUserFolder successfully on...
 
       - Zope 2.4-series
       - Zope 2.5-series
       - Zope 2.6-series
       - Zope 2.7-series
-
-    For the Zope 2.3 series you might want to look at a different set
-    of products, namely the LDAPLoginAdapter and the LDAPUserManager. 
-    These products are not officially supported anymore but they were
-    written on and for the Zope 2.3.x series. You can find more
-    information at: http://www.dataflake.org/old_stuff
-
-    If you are looking for a similar solution for a pre-2.3.0-site 
-    see http://sourceforge.net/projects/zldapadapter/ for the 
-    LDAPAdapter. The LDAPAdapter, written by Ross Lazarus and Soren Roug,
-    formed the basis for the LDAPUserFolder.
 
     This product is platform-independent except for its reliance on 
     the python-ldap module. If you cannot compile or find a python-
@@ -216,4 +182,5 @@ README for the Zope LDAPUserGroupsFolder Product
     who, as an added bonus, can delete and create user folders. This is 
     a breach of the standard "the superuser cannot create / own anything" 
     policy, but can save your skin in so many ways.
+
 

@@ -277,6 +277,7 @@ class LDAPUserFolder(BasicUserFolder):
 
         user_attrs = res['results'][0]
         dn = user_attrs.get('dn')
+        utf8_dn = to_utf8(dn)
 
         if pwd is not None:
             # Step 2: Re-bind using the password passed in and the DN we
@@ -294,7 +295,7 @@ class LDAPUserFolder(BasicUserFolder):
                 # are one-way encoded I must ask the LDAP server to verify
                 # the password, I cannot do it myself.
                 try:
-                    self._delegate.connect(bind_dn=dn, bind_pwd=pwd)
+                    self._delegate.connect(bind_dn=utf8_dn, bind_pwd=pwd)
                 except:
                     # Something went wrong, most likely bad credentials
                     msg = '_lookupuser: Binding as "%s:%s" fails' % (dn, pwd)
@@ -305,7 +306,7 @@ class LDAPUserFolder(BasicUserFolder):
                 msg = '_lookupuser: Re-binding as "%s:%s"' % (user_dn,user_pwd)
                 self._log.log(9, msg)
 
-            auth_res = self._delegate.search( base=dn
+            auth_res = self._delegate.search( base=utf8_dn
                                             , scope=BASE
                                             , filter='(objectClass=*)'
                                             , attrs=known_attrs
@@ -638,7 +639,7 @@ class LDAPUserFolder(BasicUserFolder):
     def authenticate(self, name, password, request):
         super = self._emergency_user
 
-        if name is None:
+        if not name:
             return None
 
         if super and name == super.getUserName():
@@ -663,7 +664,7 @@ class LDAPUserFolder(BasicUserFolder):
     security.declareProtected(manage_users, 'getUserDetails')
     def getUserDetails(self, encoded_dn, format=None, attrs=[]):
         """ Return all attributes for a given DN """
-        dn = urllib.unquote(encoded_dn)
+        dn = to_utf8(urllib.unquote(encoded_dn))
 
         res = self._delegate.search( base=dn
                                    , scope=BASE
@@ -845,6 +846,10 @@ class LDAPUserFolder(BasicUserFolder):
         if res['exception']:
             msg = 'findUser Exception (%s)' % res['exception']
             self.verbose > 1 and self._log.log(2, msg)
+            msg = 'findUser searched term "%s", param "%s"' % ( search_term
+                                                              , search_param
+                                                              )
+            self.verbose > 8 and self._log.log(9, msg)
             users = [{ 'dn' : res['exception']
                      , 'cn' : 'n/a'
                      , 'sn' : 'Error'
@@ -2111,6 +2116,12 @@ class LDAPUserFolder(BasicUserFolder):
         """ Edit a user record """
         msg = ''
         new_attrs = {}
+        utf8_dn = to_utf8(user_dn)
+        cur_user = self.getUserByDN(utf8_dn)
+
+        if cur_user is None:
+            return 'No user with DN "%s"' % user_dn
+
         if REQUEST is None:
             source = kwargs
         else:
@@ -2140,20 +2151,23 @@ class LDAPUserFolder(BasicUserFolder):
         rdn = self._rdnattr
         new_cn = source.get(rdn, '')
         new_dn = ''
-        old_dn_exploded = explode_dn(user_dn)
-        cur_rdn = old_dn_exploded[0]
-        cur_cn = cur_rdn.split('=')[1]
 
-        if new_cn and cur_cn != new_cn:
-            old_dn = user_dn
-            old_dn_exploded[0] = '%s=%s' % (rdn, new_cn)
+        # This is not good, but explode_dn mangles non-ASCII
+        # characters so I simply cannot use it.
+        old_utf8_rdn = to_utf8('%s=%s' % (rdn, cur_user.getProperty(rdn)))
+        new_rdn = '%s=%s' % (rdn, new_cn)
+        new_utf8_rdn = to_utf8(new_rdn)
+
+        if new_cn and new_utf8_rdn != old_utf8_rdn:
+            old_dn = utf8_dn
+            old_dn_exploded = explode_dn(old_dn)
+            old_dn_exploded[0] = new_rdn
             new_dn = ','.join(old_dn_exploded)
-
-            old_groups = self.getGroups(dn=old_dn, attr='dn')
+            old_groups = self.getGroups(dn=user_dn, attr='dn')
 
             if self._local_groups:
-                if self._groups_store.get(old_dn):
-                    del self._groups_store[old_dn]
+                if self._groups_store.get(user_dn):
+                    del self._groups_store[user_dn]
 
                 self._groups_store[new_dn] = old_groups
 
@@ -2164,7 +2178,7 @@ class LDAPUserFolder(BasicUserFolder):
 
                     msg = self._delegate.modify( group
                                                , DELETE
-                                               , {member_type : [old_dn]}
+                                               , {member_type : [user_dn]}
                                                )
                     msg = self._delegate.modify( group
                                                , ADD
@@ -2173,11 +2187,11 @@ class LDAPUserFolder(BasicUserFolder):
 
             # CPS Groups
 
-            old_usergroups = self.getUserGroups(dn=old_dn, attr='dn')
+            old_usergroups = self.getUserGroups(dn=user_dn, attr='dn')
 
             if self._local_usergroups:
-                if self._usergroups_store.get(old_dn):
-                    del self._usergroups_store[old_dn]
+                if self._usergroups_store.get(user_dn):
+                    del self._usergroups_store[user_dn]
                 self._usergroups_store[new_dn] = old_usergroups
             else:
                 for usergroup in old_usergroups:
@@ -2185,14 +2199,14 @@ class LDAPUserFolder(BasicUserFolder):
                     member_type = GROUP_MEMBER_MAP.get(usergroup_type)
                     msg = self._delegate.modify( usergroup
                                                , DELETE
-                                               , {member_type : [old_dn]}
+                                               , {member_type : [user_dn]}
                                                )
                     msg = self._delegate.modify( usergroup
                                                , ADD
                                                , {member_type : [new_dn]}
                                                )
 
-        self._expireUser(cur_cn)
+        self._expireUser(cur_user.getProperty(rdn))
         msg = msg or 'User %s changed' % (new_dn or user_dn)
 
         if REQUEST:

@@ -8,8 +8,8 @@
 ######################################################################
 __version__='$Revision$'[11:-2]
 
-from types import UnicodeType, StringType
 import urllib, sha, SSHA, random, base64, codecs, string
+from types import UnicodeType
 import re
 
 
@@ -52,7 +52,7 @@ def _normalizeDN(dn):
 
 def _verifyUnicode(st):
     """ Verify that the string is unicode """
-    if type(st) is UnicodeType:
+    if isinstance(st, UnicodeType):
         return st
     else:
         try:

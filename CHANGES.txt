@@ -12,6 +12,48 @@ CHANGES.txt for the LDAPUserGroupsFolder
           Nuxeo (http://www.nuxeo.com/) about this, not the original
           author.
 
+    2.3
+
+      Bugs fixed:
+
+        * Noticed that sometimes "empty" authentication credentials lead
+          to unnecessary lookups for non-existing users. Relaxed a 
+          specific authentication check so this is prevented.
+
+        * The unicode changes had possible disabling consequences for
+          group-to-role mappings defined on the Groups tab. Thanks go
+          to Helge Tesdal for pointing that one out.
+
+
+    2.3beta3
+
+      Bugs fixed:
+
+        * Fixed a couple buglets found by Florent Guillaume (JTracker
+          issue 333).
+
+        * Florent also noticed code that would trigger unnecessary 
+          MODRDN calls when a user record was updated. This extra call
+          did not damage the record, it was just unnecessary work
+          (issue 334).
+
+        * Dieter Maurer provided the explanation for a recursion error
+          in the __getattr__ method on the LDAPUser object that a 
+          few people had run into (JTracker issue 338 by Michael
+          Crawford).
+
+        * The getGroupedUsers method was not working if the groups are
+          stored in the user folder itself (JTracker issue 342, thanks
+          Florent Guillaume again).
+
+        * Spurred by Helge Tesdal and Nate Aune I spent a little more 
+          time on the unicode-ability. Now a user that has non-ASCII
+          characters not just in arbitrary attributes but also in
+          attributes that form part of the full DN are processed
+          correctly. This required quite a few changes, so any feedback
+          is very welcome.
+
+
     2.3beta2
 
       Bugs fixed:

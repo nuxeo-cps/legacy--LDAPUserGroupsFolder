@@ -8,22 +8,27 @@
 ######################################################################
 __version__='$Revision$'[11:-2]
 
-
+# General Python imports
 import time
-from types import UnicodeType, StringType
+from types import StringType, UnicodeType
+
+# Zope imports
 from Acquisition import aq_inner, aq_parent
 from AccessControl.User import BasicUser
 from AccessControl.Permissions import access_contents_information, manage_users
 from DateTime import DateTime
 from AccessControl import ClassSecurityInfo
 from Globals import InitializeClass
-from utils import _verifyUnicode, encoding
 from OFS.SimpleItem import SimpleItem
+
+# LDAPUserFolder package imports
+from utils import _verifyUnicode, encoding
 
 
 class LDAPUser(BasicUser):
     """ A user object for LDAP users """
     security = ClassSecurityInfo()
+    _properties = None
 
     def __init__( self
                 , name
@@ -37,6 +42,7 @@ class LDAPUser(BasicUser):
                 , multivalued_attrs=()
                 ):
         """ Instantiate a new LDAPUser object """
+        self._properties = {}
         self.name = _verifyUnicode(name)
         self.__ = password
         self._dn = _verifyUnicode(user_dn)
@@ -48,7 +54,6 @@ class LDAPUser(BasicUser):
         now = time.time()
         self._created = now
         self._lastactivetime = now
-        self._properties = {}
 
         for key in user_attrs.keys():
             if key in multivalued_attrs:
@@ -56,7 +61,7 @@ class LDAPUser(BasicUser):
             else:
                 prop = user_attrs.get(key, [None])[0]
 
-            if type(prop) is StringType:
+            if isinstance(prop, StringType):
                 prop = _verifyUnicode(prop)
 
             self._properties[key] = prop
@@ -80,7 +85,10 @@ class LDAPUser(BasicUser):
     security.declarePublic('getUserName')
     def getUserName(self):
         """ Get the name associated with this user """
-        return self.name.encode(encoding)
+        if isinstance(self.name, UnicodeType):
+            return self.name.encode(encoding)
+
+        return self.name
 
 
     # CPS Groups (needed by NuxUserGroups' patch of BasicUser)
@@ -175,7 +183,7 @@ class LDAPUser(BasicUser):
         if my_props.has_key(name):
             prop = my_props.get(name)
 
-            if type(prop) is UnicodeType:
+            if isinstance(prop, UnicodeType):
                 prop = prop.encode(encoding)
 
             return prop
@@ -191,7 +199,7 @@ class LDAPUser(BasicUser):
             if the attribute is indeed public.
         """
         prop = self._properties.get(prop_name, default)
-        if type(prop) is UnicodeType:
+        if isinstance(prop, UnicodeType):
             prop = prop.encode(encoding)
             
         return prop
@@ -200,7 +208,10 @@ class LDAPUser(BasicUser):
     security.declareProtected(access_contents_information, 'getUserDN')
     def getUserDN(self):
         """ Return the user's full Distinguished Name """
-        return self._dn.encode(encoding)
+        if isinstance(self._dn, UnicodeType):
+            return self._dn.encode(encoding)
+
+        return self._dn
 
 
     def _updateActiveTime(self):

@@ -1,4 +1,21 @@
 *******************************************
+** LDAPUserGroupsFolder V2.8.0 [R1 build 2004/10/21-15:42 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Works correctly with local role blocking 'group:role:Anonymous': '-'.
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- searchUsers() : Check if restricted_search_member_list is specified within the options. 
+  In this case it means the search results must restricted to that list
+
+*******************************************
 ** LDAPUserGroupsFolder V2.7.0 [R1 build 2004/07/22-13:46 by ben]
 
 Requires:

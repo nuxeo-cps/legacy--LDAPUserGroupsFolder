@@ -604,14 +604,14 @@ class LDAPUserFolder(BasicUserFolder):
         groups_done = {'role:Anonymous': None}
         if login_name != 'Anonymous User':
             groups_done['role:Authenticated'] = None
-        # Recursively expand groups if they have subgroups.
+        # Recursively expand groups if they have supergroups.
         groups_todo = list(user_groups or ())
         while groups_todo:
             g = groups_todo.pop(0)
             if groups_done.has_key(g):
                 continue
             groups_done[g] = None
-            groups_todo.extend(self._getGroupSubgroups(g))
+            groups_todo.extend(self._getGroupSupergroups(g))
         # Final result is the computed groups.
         computed_groups = groups_done.keys()
 
@@ -1538,6 +1538,18 @@ class LDAPUserFolder(BasicUserFolder):
         subgroups = self._getGroupSubgroups(groupname)
 
         return CPSGroup(groupname, users, subgroups).__of__(self)
+
+    security.declarePrivate('_getGroupSupergroups')
+    def _getGroupSupergroups(self, groupname):
+        """Get all the groups a group belongs to."""
+        if self._local_usergroups:
+            items = self._subgroups_store.items()
+            supergroups = [g for g, subgroups in items
+                           if groupname in subgroups]
+        else:
+            # XXX not implemented for ldap storage yet.
+            supergroups = ()
+        return supergroups
 
     security.declarePrivate('_getGroupSubgroups')
     def _getGroupSubgroups(self, groupname):

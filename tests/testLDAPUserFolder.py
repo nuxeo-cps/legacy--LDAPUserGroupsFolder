@@ -12,6 +12,9 @@ __version__='$Revision$'[11:-2]
 # General Python imports
 import unittest, sys
 
+from Testing import ZopeTestCase
+ZopeTestCase.installProduct('LDAPUserGroupsFolder')
+
 # Zope imports
 import ZODB
 from ZODB.MappingStorage import MappingStorage
@@ -27,7 +30,7 @@ if sys.modules.has_key('_ldap'):
 sys.modules['ldap'] = FakeLDAP
 
 # LDAPUserFolder package imports
-from Products.LDAPUserFolder import manage_addLDAPUserFolder
+from Products.LDAPUserGroupsFolder import manage_addLDAPUserGroupsFolder
 
 # Tests imports
 from config import defaults, alternates, user, manager_user
@@ -51,7 +54,7 @@ class TestLDAPUserFolder(unittest.TestCase):
         folder = Folder('luftest')
         self.root['luftest'] = folder
         self.folder = self.root.get('luftest')
-        manage_addLDAPUserFolder( self.folder
+        manage_addLDAPUserGroupsFolder( self.folder
                                 , dg('title')
                                 , dg('server')
                                 , dg('login_attr')

@@ -26,8 +26,8 @@ if sys.modules.has_key('_ldap'):
 sys.modules['ldap'] = FakeLDAP
 
 # LDAPUserFolder package imports
-from Products.LDAPUserFolder import manage_addLDAPUserFolder
-from Products.LDAPUserFolder import manage_addLDAPUserSatellite
+from Products.LDAPUserGroupsFolder \
+    import manage_addLDAPUserGroupsFolder, manage_addLDAPUserSatellite
 
 # Tests imports
 from config import defaults, alternates, user, satellite_defaults
@@ -54,7 +54,7 @@ class TestLDAPUserSatellite(unittest.TestCase):
         self.root = root.get('app')
         manage_addFolder(self.root, 'luftest')
         self.folder = self.root.luftest
-        manage_addLDAPUserFolder( self.folder
+        manage_addLDAPUserGroupsFolder( self.folder
                                 , dg('title')
                                 , dg('server')
                                 , dg('login_attr')

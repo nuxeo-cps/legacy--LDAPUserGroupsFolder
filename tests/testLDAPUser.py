@@ -16,6 +16,13 @@ from types import ListType, TupleType
 # Zope imports
 import ZODB
 
+# Do some namespace manipulation to make use of FakeLDAP
+import sys
+import FakeLDAP
+if sys.modules.has_key('_ldap'):
+    del sys.modules['_ldap']
+sys.modules['ldap'] = FakeLDAP
+
 # LDAPUserFolder package imports
 from LDAPUser import LDAPUser
 

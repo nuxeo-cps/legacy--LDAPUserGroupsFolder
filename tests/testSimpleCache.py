@@ -16,6 +16,13 @@ import unittest, time
 # Zope Imports
 from DateTime.DateTime import DateTime
 
+# Do some namespace manipulation to make use of FakeLDAP
+import sys
+import FakeLDAP
+if sys.modules.has_key('_ldap'):
+    del sys.modules['_ldap']
+sys.modules['ldap'] = FakeLDAP
+
 # LDAPUserFolder package imports
 from SimpleCache import SimpleCache
 

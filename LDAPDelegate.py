@@ -377,7 +377,7 @@ class LDAPDelegate(Persistent):
         return msg
 
 
-    def modify(self, dn, mod_type=None, attrs=None, binary_attrs=[]):
+    def modify(self, dn, mod_type=None, attrs=None):
         """ Modify a record """
         if self.read_only:
             return 'Running in read-only mode, modification is disabled'
@@ -397,11 +397,7 @@ class LDAPDelegate(Persistent):
         msg = ''
 
         for key, values in attrs.items():
-            if key not in binary_attrs:
-                values = map(to_utf8, values)
-            else:
-                print "jahaja", key
-                print repr(values[0])
+            values = map(to_utf8, values)
 
             if mod_type is None:
                 if cur_rec.get(key, ['']) != values and values != ['']:

@@ -18,6 +18,7 @@ from DateTime import DateTime
 from AccessControl import ClassSecurityInfo
 from Globals import InitializeClass
 from utils import _verifyUnicode, encoding
+from OFS.SimpleItem import SimpleItem
 
 
 class LDAPUser(BasicUser):
@@ -218,3 +219,21 @@ class LDAPUser(BasicUser):
     
 
 InitializeClass(LDAPUser)
+
+
+class CPSGroup(SimpleItem):
+    """Very basic group object for CPS group behavior."""
+
+    security = ClassSecurityInfo()
+
+    def __init__(self, id, users, **kw):
+        #self.users = [_verifyUnicode(u).encode(encoding)
+        #              for u in users]
+        self.users = tuple(users)
+
+    security.declareProtected(manage_users, 'getUsers')
+    def getUsers(self):
+        """Get group users ids."""
+        return self.users
+
+InitializeClass(CPSGroup)

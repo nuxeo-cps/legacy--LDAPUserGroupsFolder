@@ -29,7 +29,7 @@ from OFS.SimpleItem import SimpleItem
 from BTrees.OOBTree import OOBTree
 
 # LDAPUserFolder package imports
-from LDAPUser import LDAPUser
+from LDAPUser import LDAPUser, CPSGroup
 from LDAPDelegate import LDAPDelegate, explode_dn
 from LDAPDelegate import ADD, DELETE, REPLACE, BASE
 from SimpleLog import SimpleLog
@@ -1206,14 +1206,6 @@ class LDAPUserFolder(BasicUserFolder):
 ##         """Deletes groups"""
 ##         self.manage_deleteUserGroups(groupnames)
 
-
-##     security.declareProtected(manage_users, 'getGroupById')
-##     def getGroupById(self, groupname):
-##         """Returns the given group"""
-##         # XXX CPS implement this...
-##         raise NotImplementedError
-
-
     def _getMappedProperties(self):
         """Get a list of tuples for (ldap_attr, public_attr).
 
@@ -1434,10 +1426,55 @@ class LDAPUserFolder(BasicUserFolder):
     # XXX In need of refactoring.
     #
 
+    def _getUserLoginFromDN(self, user_dn):
+        """Return the login of a user from its DN."""
+        # Check if we can get the login attribute from the dn.
+        rdn = user_dn.split(',')[0]
+        rdn_attr, rdn_value = rdn.split('=', 1)
+        if rdn_attr == self._login_attr:
+            user_id = rdn_value
+        else:
+            # We have to lookup the user to get its login attribute.
+            res = self._delegate.search(base=user_dn,
+                                        scope=BASE,
+                                        attrs=[self._login_attr]
+                                        )
+            if res['exception'] or not res['size']:
+                return None
+
+            user_id = res['results'][0].get(self._login_attr)[0]
+        user_id = _verifyUnicode(user_id).encode(encoding)
+        return user_id
+
     security.declareProtected(manage_users, 'getGroupNames')
     def getGroupNames(self):
         """Return a list of group names."""
         return tuple(self.getUserGroups(attr='cn'))
+
+
+    security.declareProtected(manage_users, 'getGroupById')
+    def getGroupById(self, groupname, default=_marker):
+        """Return the given group.
+
+        The only method callable on a group is getUsers().
+        """
+        member_attrs = GROUP_MEMBER_MAP.values() + ['']
+        dns = {}
+        result = self.getUserGroupDetails(groupname)
+        # XXX Detect if group doesn't exist.
+        for key, user_dns in result:
+            if key in member_attrs:
+                for dn in user_dns:
+                    dns[dn] = None
+        users = {}
+        for dn in dns.keys():
+            user_id = self._getUserLoginFromDN(dn)
+            if user_id is not None:
+                users[user_id] = None
+        users = users.keys()
+
+        return CPSGroup(groupname, users)
+
 
     security.declarePrivate('mergedLocalRoles')
     def mergedLocalRoles(self, object, withgroups=0, withpath=None):

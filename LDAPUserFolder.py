@@ -2136,7 +2136,7 @@ class LDAPUserFolder(BasicUserFolder):
 
     security.declareProtected(manage_users, 'setGroupsOfUser')
     def getUsersOfGroup(self, groupid):
-        return self.searchUsers({'group': groupid})
+        return self.searchUsers({'groups': [groupid]})
 
     security.declareProtected(manage_users, 'manage_editUserGroups')
     def manage_editUserGroups(self, user_dn, usergroup_dns=[], REQUEST=None):

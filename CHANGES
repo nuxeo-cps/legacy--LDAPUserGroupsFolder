@@ -1,18 +1,16 @@
 ZODB Requires:
 ~~~~~~~~~~~~~~
 -
-
 New features:
 ~~~~~~~~~~~~~
 - Now based on LDAPUserFolder 2.3.
 - Implemented subgroups support when groups are stored in the ZODB.
-
 Bug fixes:
 ~~~~~~~~~~
 - Correctly work with groups stored in the ZODB.
 - Better conformance with Group API to work with NuxMetaDirerectories.
 - Correctly infer current user's groups and special groups and computed groups.
-
+- Correctly ask for mapped attributes to be returned when doing a search.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - In some cases correctly normalize DNs that contain spaces.

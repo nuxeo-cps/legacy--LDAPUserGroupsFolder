@@ -1301,7 +1301,7 @@ class LDAPUserFolder(BasicUserFolder):
         """Lists properties settable or searchable on the users."""
         schema = self.getSchemaConfig()
         attrs = {'dn': None}
-        for attr, names in schema.keys():
+        for attr, names in schema.items():
             attrs[attr] = None
             if names.get('public_name'):
                 # Add mapped attribute.

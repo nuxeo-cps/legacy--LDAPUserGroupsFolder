@@ -1,16 +1,16 @@
 <dtml-var manage_page_header>
 
 <dtml-var "manage_form_title(this(), _,
-           form_title='Add LDAP User Folder',
-           help_product='LDAPUserFolder',
+           form_title='Add LDAP User Groups Folder',
+           help_product='LDAPUserGroupsFolder',
            help_topic='Add.stx'
            )">
 
 <p class="form-help">
-  Add a new  LDAPUserFolder with this form.
+  Add a new  LDAPUserGroupsFolder with this form.
 </p>
 
-<form action="manage_addLDAPUserFolder" method="POST">
+<form action="manage_addLDAPUserGroupsFolder" method="POST">
 
   <table cellspacing="0" cellpadding="3">
   
@@ -87,10 +87,45 @@
   
     <tr>
       <td align="left" valign="top"><div class="form-label">
-        Group storage
+        Role storage
       </div></td>
       <td align="left" valign="top">
         <select name="local_groups:int">
+          <option value="0" selected>
+            Roles stored on LDAP server
+          </option>
+          <option value="1">
+            Roles not stored on LDAP server
+          </option>
+        </select>
+      </td>
+    </tr>
+  
+    <tr>
+      <td align="LEFT" valign="TOP"><div class="form-label">
+        Roles Base DN
+      </div></td>
+      <td align="LEFT" valign="TOP">
+        <input type="TEXT" name="groups_base" size="40" 
+               value="ou=roles,o=Organization,c=US" />
+      </td>
+      <td align="LEFT" valign="TOP"><div class="form-label">
+        Scope
+      </div></td>
+      <td align="LEFT" valign="TOP">
+        <select name="groups_scope:int">
+          <option value="0"> BASE </option>
+          <option value="1"> ONELEVEL </option>
+          <option value="2" selected> SUBTREE </option>
+        </select></td>
+    </tr>
+  
+    <tr>
+      <td align="left" valign="top"><div class="form-label">
+        Group storage
+      </div></td>
+      <td align="left" valign="top">
+        <select name="local_usergroups:int">
           <option value="0" selected>
             Groups stored on LDAP server
           </option>
@@ -106,14 +141,14 @@
         Groups Base DN
       </div></td>
       <td align="LEFT" valign="TOP">
-        <input type="TEXT" name="groups_base" size="40" 
+        <input type="TEXT" name="usergroups_base" size="40" 
                value="ou=groups,o=Organization,c=US" />
       </td>
       <td align="LEFT" valign="TOP"><div class="form-label">
         Scope
       </div></td>
       <td align="LEFT" valign="TOP">
-        <select name="groups_scope:int">
+        <select name="usergroups_scope:int">
           <option value="0"> BASE </option>
           <option value="1"> ONELEVEL </option>
           <option value="2" selected> SUBTREE </option>

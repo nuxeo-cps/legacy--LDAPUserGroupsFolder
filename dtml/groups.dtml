@@ -1,11 +1,11 @@
 <dtml-var manage_page_header>
 
-<dtml-with "_(management_view='Groups')">
+<dtml-with "_(management_view='Roles')">
   <dtml-var manage_tabs>
 </dtml-with>
 
 <p class="form-help">
-  This view shows all available groups at the specified branch 
+  This view shows all available roles at the specified branch 
   and allows deletion and addition.
 </p>
 
@@ -57,9 +57,9 @@
 <dtml-else>
   <br />
   <div class="form-label">
-    No groups found. 
-    Please check the settings "Group base DN" and "Groups search scope" 
-    and make sure your LDAP tree contains suitable group records.
+    No roles found. 
+    Please check the settings "Role base DN" and "Roles search scope" 
+    and make sure your LDAP tree contains suitable roles records.
   </div>
 
 </dtml-in>
@@ -72,13 +72,13 @@
   
     <tr class="section-bar">
       <td colspan="2" align="left" valign="top"><div class="form-label">
-        Add Group
+        Add Role
       </div></td>
     </tr>
     
     <tr>
       <td colspan="2" align="left" valign="top"><div class="form-text">
-        Add a new group on this LDAP branch by specifying a group name
+        Add a new role on this LDAP branch by specifying a role name
         and hitting "Add". 
         The name is a "friendly" name, meaning it 
         is not a dn or does not contain any LDAP-sepecific elements.
@@ -87,17 +87,17 @@
     
     <tr><td colspan="2">&nbsp;</td></tr><tr>
       <td align="left" valign="absmiddle"><div class="form-label">
-        Group Name
+        Role name
       </div></td>
       <td align="LEFT" valign="TOP">
         <input type="TEXT" name="newgroup_name" size="50" 
-               value="MyGroup" />&nbsp;
+               value="MyRole" />&nbsp;
       </td>
     </tr>
     
     <tr>
       <td align="left" valign="absmiddle"><div class="form-label">
-        Group object class
+        Role object class
       </div></td>
       <td align="LEFT" valign="TOP">
         <select name="newgroup_type">
@@ -124,7 +124,7 @@
 <table cellspacing="0" cellpadding="2" width="95%">
   <tr>
     <td align="left" valign="top"><div class="form-text">
-      This section determines if LDAP groups are mapped to Zope roles
+      This section determines if LDAP roles are mapped to Zope roles
       and what they map to.
     </div></td>
   </tr>
@@ -139,7 +139,7 @@
     <table border="0" cellpadding="2" cellspacing="0" width="95%">
       <tr class="list-header">
         <td align="left" valign="top" width="16">&nbsp;</td>
-        <td><div class="form-label"> LDAP Group </div></td>
+        <td><div class="form-label"> LDAP Role </div></td>
         <td><div class="form-label"> Zope Role </div></td>
       </tr>
   </dtml-if>
@@ -169,7 +169,7 @@
   </dtml-if>
 
 <dtml-else>
-  <p>(No group mappings specified at this time.)</p>
+  <p>(No role mappings specified at this time.)</p>
 
 </dtml-in>
 
@@ -181,13 +181,13 @@
   
     <tr class="section-bar">
       <td colspan="4" align="left" valign="top"><div class="form-label">
-        Add LDAP group to Zope role mapping
+        Add LDAP role to Zope role mapping
       </div></td>
     </tr>
   
     <tr>
       <td align="left" valign="absmiddle"><div class="form-label">
-        Map this LDAP Group... &nbsp; 
+        Map this LDAP role... &nbsp; 
       </div></td>
       <td align="LEFT" valign="TOP">
         <select name="group_name">

@@ -5,7 +5,7 @@
 </dtml-with>
 
 <p class="form-help">
-  This view shows all available groups exposed by the LDAP server 
+  This view shows all available roles and groups exposed by the LDAP server 
   as well as all non-anonymous logged-in users in the cache 
   at this moment.
 </p>
@@ -84,6 +84,7 @@
     <tr>
       <td><div class="form-label"> UserID </div></td>
       <td><div class="form-label"> Roles </div></td>
+      <td><div class="form-label"> Groups </div></td>
       <td><div class="form-label"> Last Access time </div></td>
       <td><div class="form-label"> Cache Type </div></td>
     </tr>
@@ -100,6 +101,11 @@
       </div></td>
       <td valign="top"><div class="form-text">
         <dtml-in expr="getRoles()">
+          <dtml-var name="sequence-item"><br>
+        </dtml-in>
+      </div></td>
+      <td valign="top"><div class="form-text">
+        <dtml-in expr="getGroups()">
           <dtml-var name="sequence-item"><br>
         </dtml-in>
       </div></td>
@@ -125,6 +131,11 @@
       </div></td>
       <td valign="top"><div class="form-text">
         <dtml-in expr="getRoles()">
+          <dtml-var name="sequence-item"><br>
+        </dtml-in>
+      </div></td>
+      <td valign="top"><div class="form-text">
+        <dtml-in expr="getGroups()">
           <dtml-var name="sequence-item"><br>
         </dtml-in>
       </div></td>

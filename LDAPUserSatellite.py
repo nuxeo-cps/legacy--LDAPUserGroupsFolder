@@ -54,11 +54,11 @@ class LDAPUserSatellite(SimpleItem):
     manage_options=(
         (
         {'label' : 'Configure',	'action' : 'manage_main', 
-         'help'  : ('LDAPUserFolder','ConfigureSatellite.stx')},
+         'help'  : ('LDAPUserGroupsFolder','ConfigureSatellite.stx')},
         {'label' : 'Caches', 'action' : 'manage_cache',
-         'help'  : ('LDAPUserFolder', 'CachesSatellite.stx')},
+         'help'  : ('LDAPUserGroupsFolder', 'CachesSatellite.stx')},
         {'label' : 'Log', 'action' : 'manage_log',
-         'help'  : ('LDAPUserFolder', 'LogSatellite.stx')},
+         'help'  : ('LDAPUserGroupsFolder', 'LogSatellite.stx')},
         )
         + SimpleItem.manage_options
         ) 

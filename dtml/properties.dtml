@@ -5,7 +5,7 @@
 </dtml-with>
 
 <p class="form-help">
-  Change the basic properties of your LDAPUserFolder 
+  Change the basic properties of your LDAPUserGroupsFolder 
   on this form.
 </p>
 
@@ -89,16 +89,16 @@
   
     <tr>
       <td align="left" valign="top"><div class="form-label">
-        Group storage
+        Role storage
       </div></td>
       <td align="left" valign="top">
         <select name="local_groups:int">
           <dtml-let lg="getProperty( '_local_groups' )">
             <option value="0" <dtml-if "not lg">selected</dtml-if>>
-              Groups stored on LDAP server
+              Roles stored on LDAP server
             </option>
             <option value="1" <dtml-if lg>selected</dtml-if>>
-              Groups not stored on LDAP server
+              Roles not stored on LDAP server
             </option>
           </select>
         </dtml-let>
@@ -107,7 +107,7 @@
   
     <tr>
       <td align="LEFT" valign="TOP"><div class="form-label">
-        Groups Base DN
+        Roles Base DN
       </div></td>
       <td align="LEFT" valign="TOP">
         <input type="TEXT" name="groups_base" size="40" 
@@ -125,6 +125,49 @@
             ONELEVEL
           </option>
           <option value="2" <dtml-if "groups_scope==2">selected</dtml-if>>
+            SUBTREE
+          </option>
+        </select></td>
+    </tr>
+  
+    <tr>
+      <td align="left" valign="top"><div class="form-label">
+        Group storage
+      </div></td>
+      <td align="left" valign="top">
+        <select name="local_usergroups:int">
+          <dtml-let lg="getProperty( '_local_usergroups' )">
+            <option value="0" <dtml-if "not lg">selected</dtml-if>>
+              Groups stored on LDAP server
+            </option>
+            <option value="1" <dtml-if lg>selected</dtml-if>>
+              Groups not stored on LDAP server
+            </option>
+          </select>
+        </dtml-let>
+      </td>
+    </tr>
+  
+    <tr>
+      <td align="LEFT" valign="TOP"><div class="form-label">
+        Groups Base DN
+      </div></td>
+      <td align="LEFT" valign="TOP">
+        <input type="TEXT" name="usergroups_base" size="40" 
+               value="<dtml-var name="usergroups_base">">
+      </td>
+      <td align="LEFT" valign="TOP"><div class="form-label">
+        Scope
+      </div></td>
+      <td align="LEFT" valign="TOP">
+        <select name="usergroups_scope:int">
+          <option value="0" <dtml-if "usergroups_scope==0">selected</dtml-if>>
+            BASE
+          </option>
+          <option value="1" <dtml-if "usergroups_scope==1">selected</dtml-if>>
+            ONELEVEL
+          </option>
+          <option value="2" <dtml-if "usergroups_scope==2">selected</dtml-if>>
             SUBTREE
           </option>
         </select></td>

@@ -13,7 +13,7 @@ __version__ = '$Revision$'[11:-2]
 from AccessControl.Permissions import add_user_folders
 
 from LDAPUserFolder import addLDAPUserFolderForm, \
-                           manage_addLDAPUserFolder, \
+                           manage_addLDAPUserGroupsFolder, \
                            LDAPUserFolder
 from LDAPUserSatellite import addLDAPUserSatelliteForm, \
                               manage_addLDAPUserSatellite, \
@@ -23,7 +23,7 @@ def initialize(context):
     context.registerClass( LDAPUserFolder
                          , permission=add_user_folders
                          , constructors=( addLDAPUserFolderForm
-                                        , manage_addLDAPUserFolder
+                                        , manage_addLDAPUserGroupsFolder
                                         )
                          , icon='www/ldapuserfolder.gif'
                          )

@@ -26,7 +26,7 @@
       <td align="LEFT" valign="TOP"><div class="form-element">
         <select name="luf">
           <dtml-let my_path="_.string.join( this().getPhysicalPath(), '/' )">
-            <dtml-in "superValues( [ 'LDAPUserFolder' ] )">
+            <dtml-in "superValues( [ 'LDAPUserGroupsFolder' ] )">
               <dtml-let luf_path="_.string.join(getPhysicalPath(), '/')"
                         my_luf_path="_.string.join(getLUF().getPhysicalPath(), '/')"
                         sel="luf_path == my_luf_path and 'selected' or ''">

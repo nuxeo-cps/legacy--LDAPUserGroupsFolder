@@ -2,7 +2,7 @@
 
 <dtml-var "manage_form_title(this(), _,
            form_title='Add LDAP User Satellite',
-           help_product='LDAPUserFolder',
+           help_product='LDAPUserGroupsFolder',
            help_topic='AddSatellite.stx'
            )">
 
@@ -10,7 +10,7 @@
   Add a new LDAPUserSatellite with this form.
 </p>
 
-<dtml-let lufs="superValues(['LDAPUserFolder'])">
+<dtml-let lufs="superValues(['LDAPUserGroupsFolder'])">
   <dtml-if lufs>
 
     <form action="manage_addLDAPUserSatellite" method="POST">

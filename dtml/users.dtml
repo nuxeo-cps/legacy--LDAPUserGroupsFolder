@@ -225,7 +225,7 @@ function toggleSelect() {
   <table cellpadding"3" cellspacing="0" width="98%">
     <tr class="section-bar">
       <td align="left" valign="top"><div class="form-label">
-        LDAP Groups for &dtml-user_dn;
+        Roles for &dtml-user_dn;
       </div></td>
     </tr>
   </table>
@@ -236,6 +236,29 @@ function toggleSelect() {
   <dtml-in expr="getGroups()"><div class="form-text">
     <input type="checkbox" name="role_dns:list" value="&dtml-sequence-item;" 
       <dtml-if expr="_['sequence-item'] in cur_roles">checked</dtml-if>>
+    &dtml-sequence-key; (&dtml-sequence-item;)</div>
+  </dtml-in>
+  </dtml-let>
+  <br />
+  &nbsp;<input type="submit" value=" Change Roles ">
+  </form>
+
+  <p><br></p>
+
+  <table cellpadding"3" cellspacing="0" width="98%">
+    <tr class="section-bar">
+      <td align="left" valign="top"><div class="form-label">
+        Groups for &dtml-user_dn;
+      </div></td>
+    </tr>
+  </table>
+
+  <form action="manage_editUserGroups" method="post">
+  <input type="hidden" name="user_dn" value="&dtml-user_dn;">
+  <dtml-let cur_usergroups="getUserGroups(dn=user_dn, attr='dn')">
+  <dtml-in expr="getUserGroups()"><div class="form-text">
+    <input type="checkbox" name="usergroup_dns:list" value="&dtml-sequence-item;" 
+      <dtml-if expr="_['sequence-item'] in cur_usergroups">checked</dtml-if>>
     &dtml-sequence-key; (&dtml-sequence-item;)</div>
   </dtml-in>
   </dtml-let>
@@ -469,6 +492,19 @@ function toggleSelect() {
         </td>
       </tr>
       
+      <tr>
+        <td align="left" valign="top"><div class="form-label">
+          Groups
+        </div></td>
+        <td align="left" valign="top">
+          <dtml-in expr="getUserGroups()"><div class="form-text">
+            <input type="checkbox" name="user_usergroups:list"
+                value="&dtml-sequence-item;" />
+              &dtml-sequence-key;</div>
+          </dtml-in>
+        </td>
+      </tr>
+
       <tr> <td colspan="2">&nbsp;</td> </tr>
       
       <tr>

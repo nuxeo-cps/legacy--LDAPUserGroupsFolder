@@ -432,7 +432,7 @@ class LDAPDelegate(Persistent):
         rdn_attr = rdn[:rdn.find('=')]
         new_rdn = attrs.get(rdn_attr, [''])[0]
 
-        if new_rdn and new_rdn != cur_rec.get(rdn_attr):
+        if new_rdn and new_rdn != cur_rec.get(rdn_attr)[0]:
             new_dn = '%s=%s' % (rdn_attr, new_rdn)
             try:
                 connection.modrdn_s(dn, new_dn, 0)

@@ -28,6 +28,7 @@ class LDAPUser(BasicUser):
                 , name
                 , password
                 , roles
+                , usergroups
                 , domains
                 , user_dn
                 , user_attrs
@@ -39,6 +40,7 @@ class LDAPUser(BasicUser):
         self.__ = password
         self._dn = _verifyUnicode(user_dn)
         self.roles = roles
+        self.usergroups = tuple(usergroups)
         self.domains = []
         self.RID = '' 
         self.groups = ''
@@ -78,6 +80,13 @@ class LDAPUser(BasicUser):
     def getUserName(self):
         """ Get the name associated with this user """
         return self.name.encode(encoding)
+
+
+    # CPS Groups (needed by NuxUserGroups' patch of BasicUser)
+    security.declarePublic('getGroups')
+    def getGroups(self):
+        """ Return the user's groups """
+        return self.usergroups
 
 
     security.declarePublic('getRoles')

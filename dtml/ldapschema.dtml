@@ -16,7 +16,7 @@
 
 <p class="form-help">
   Adding or removing attributes on this page does not affect 
-  your LDAP schema in any way, it will only affect what the LDAPUserFolder 
+  your LDAP schema in any way, it will only affect what the LDAPUserGroupsFolder 
   knows about your schema. 
 </p>
 

@@ -1,8 +1,16 @@
-CHANGES.txt for the LDAPUserFolder
+CHANGES.txt for the LDAPUserGroupsFolder
 
-  This file contains change information for the LDAPUserFolder product.
+  This file contains change information for the LDAPUserGroupsFolder product.
   To see changes made to revisions prior to the latest version see
   HISTORY.txt.
+
+    LDAPUserGroupsFolder
+
+      Features added:
+
+        * Implement group support, to work with NuxUserGroups. Contact
+          Nuxeo (http://www.nuxeo.com/) about this, not the original
+          author.
 
     2.3beta2
 

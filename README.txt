@@ -1,4 +1,19 @@
-README for the Zope LDAPUserFolder Product
+README for the Zope LDAPUserGroupsFolder Product
+
+  This product includes software developed by Jens Vagelpohl for use in
+  the Z Object Publishing Environment (http://www.zope.org/).
+
+  NOTE: This products is not LDAPUserFolder but LDAPUserGroupsFolder. In
+  most of the documentation the name LDAPUserFolder has been kept, but
+  it is in fact really LDAPUserGroupsFolder...
+
+  For any question about LDAPUserGroupsFolder, contact Nuxeo
+  (http://www.nuxeo.com/).
+
+  LDAPUserGroupsFolder adds to the standard LDAPUserFolder a notion of
+  user groups (not to be confused with what LDAPUserFolder calls
+  "groups" which are simply mapped to roles).
+
 
   This product is a replacement for a Zope user folder. It 
   does not store its own user objects but builds them on the 

@@ -1,6 +1,9 @@
 #####################################################################
 #
-# LDAPUserFolder	An LDAP-based user source for Zope
+# LDAPUserGroupsFolder	An LDAP-based user source for Zope
+#
+# This product includes software developed by Jens Vagelpohl for use in
+# the Z Object Publishing Environment (http://www.zope.org/).
 #
 # This software is governed by a license. See
 # LICENSE.txt for the terms of this license.
@@ -50,7 +53,7 @@ class LDAPUserFolder(BasicUserFolder):
     """
     security = ClassSecurityInfo()
 
-    meta_type = 'LDAPUserFolder'
+    meta_type = 'LDAPUserGroupsFolder'
     id = 'acl_users'
     isAUserFolder = 1
 
@@ -64,17 +67,19 @@ class LDAPUserFolder(BasicUserFolder):
     manage_options=(
         (
         {'label' : 'Configure',	'action' : 'manage_main', 
-         'help'  : ('LDAPUserFolder','Configure.stx')},
+         'help'  : ('LDAPUserGroupsFolder','Configure.stx')},
         {'label' : 'LDAP Schema', 'action' : 'manage_ldapschema',
-         'help'  : ('LDAPUserFolder', 'Schema.stx')},
+         'help'  : ('LDAPUserGroupsFolder', 'Schema.stx')},
         {'label' : 'Caches', 'action' : 'manage_cache',
-         'help'  : ('LDAPUserFolder', 'Caches.stx')},
+         'help'  : ('LDAPUserGroupsFolder', 'Caches.stx')},
         {'label' : 'Users', 'action' : 'manage_userrecords',
-         'help'  : ('LDAPUserFolder', 'Users.stx')},
-        {'label' : 'Groups', 'action' : 'manage_grouprecords',
-         'help' : ('LDAPUserFolder', 'Groups.stx')},
+         'help'  : ('LDAPUserGroupsFolder', 'Users.stx')},
+        {'label' : 'Roles', 'action' : 'manage_grouprecords',
+         'help' : ('LDAPUserGroupsFolder', 'Groups.stx')},
+        {'label' : 'Groups', 'action' : 'manage_usergrouprecords',
+         'help' : ('LDAPUserGroupsFolder', 'UserGroups.stx')},
         {'label' : 'Log', 'action' : 'manage_log',
-         'help'  : ('LDAPUserFolder', 'Log.stx')},
+         'help'  : ('LDAPUserGroupsFolder', 'Log.stx')},
         )
         + SimpleItem.manage_options
         ) 
@@ -99,6 +104,8 @@ class LDAPUserFolder(BasicUserFolder):
     security.declareProtected(view_management_screens, 'manage_grouprecords')
     manage_grouprecords = DTMLFile('dtml/groups', globals())
     
+    security.declareProtected(view_management_screens, 'manage_usergrouprecords')
+    manage_usergrouprecords = DTMLFile('dtml/usergroups', globals())
 
     #################################################################
     #
@@ -134,13 +141,16 @@ class LDAPUserFolder(BasicUserFolder):
             self.verbose = 2
 
         if self.verbose > 2:
-            self._log.log(3, 'LDAPUserFolder reinitialized by __setstate__')
+            self._log.log(3, 'LDAPUserGroupsFolder reinitialized by __setstate__')
 
 
     def __init__( self, title, LDAP_server, login_attr , users_base
                 , users_scope, roles , groups_base, groups_scope
+                , usergroups_base, usergroups_scope
                 , binduid, bindpwd, binduid_usage, rdn_attr
-                , local_groups=0, encryption='SHA'
+                , local_groups=0
+                , local_usergroups=0
+                , encryption='SHA'
                 , use_ssl=0, read_only=0, REQUEST=None
                 ):
         """ Create a new LDAPUserFolder instance """
@@ -159,10 +169,12 @@ class LDAPUserFolder(BasicUserFolder):
                                     }
                            }
 
-        # Local DN to role tree for storing roles
+        # Local DN to role/usergroup tree for storing roles
         self._groups_store = OOBTree()
-        # List of additionally known roles
+        self._usergroups_store = OOBTree()
+        # List of additionally known roles/usergroups
         self._additional_groups = []
+        self._additional_usergroups = []
         # Place to store mappings from LDAP group to Zope role
         self._groups_mappings = {}
 
@@ -194,9 +206,13 @@ class LDAPUserFolder(BasicUserFolder):
                                 )
 
         self.manage_edit( title, login_attr, users_base, users_scope
-                        , roles, groups_base, groups_scope, binduid
+                        , roles, groups_base, groups_scope
+                        , usergroups_base, usergroups_scope
+                        , binduid
                         , bindpwd, binduid_usage, rdn_attr, 'top,person'
-                        , local_groups, encryption, read_only
+                        , local_groups
+                        , local_usergroups
+                        , encryption, read_only
                         )
 
 
@@ -215,6 +231,7 @@ class LDAPUserFolder(BasicUserFolder):
         """
             returns a unique RID and the groups a uid belongs to 
             as well as a dictionary containing user attributes
+            and also the usergroups
         """
         if self._login_attr == 'dn':
             users_base = uid
@@ -253,7 +270,7 @@ class LDAPUserFolder(BasicUserFolder):
         if res['size'] == 0 or res['exception']:
             msg = '_lookupuser: No user "%s" (%s)' % (uid, res['exception'])
             self.verbose > 3 and self._log.log(4, msg)
-            return None, None, None
+            return None, None, None, None
 
         user_attrs = res['results'][0]
         dn = user_attrs.get('dn')
@@ -279,7 +296,7 @@ class LDAPUserFolder(BasicUserFolder):
                     # Something went wrong, most likely bad credentials
                     msg = '_lookupuser: Binding as "%s:%s" fails' % (dn, pwd)
                     self.verbose > 3 and self._log.log(4, msg)
-                    return None, None, None
+                    return None, None, None, None
 
             if self.verbose > 8:
                 msg = '_lookupuser: Re-binding as "%s:%s"' % (user_dn,user_pwd)
@@ -296,7 +313,7 @@ class LDAPUserFolder(BasicUserFolder):
             if auth_res['size'] == 0 or auth_res['exception']:
                 msg = '_lookupuser: "%s" lookup fails bound as "%s"' % (dn, dn)
                 self.verbose > 3 and self._log.log(4, msg)
-                return None, None, None
+                return None, None, None, None
             
             user_attrs = auth_res['results'][0]
 
@@ -309,8 +326,9 @@ class LDAPUserFolder(BasicUserFolder):
         groups = list(self.getGroups(dn=dn, attr='cn', pwd=user_pwd))
         roles = self._mapRoles(groups)
         roles.extend(self._roles)
+        usergroups = list(self.getUserGroups(dn=dn, attr='cn', pwd=user_pwd))
 
-        return roles, dn, user_attrs
+        return roles, dn, user_attrs, usergroups
 
 
     security.declareProtected(manage_users, 'manage_reinit')
@@ -358,8 +376,10 @@ class LDAPUserFolder(BasicUserFolder):
     security.declareProtected(EDIT_PERMISSION, 'manage_edit')
     def manage_edit( self, title, login_attr, users_base
                    , users_scope, roles,  groups_base, groups_scope
+                   , usergroups_base, usergroups_scope
                    , binduid, bindpwd, binduid_usage=1, rdn_attr='cn'
                    , obj_classes='top,person', local_groups=0
+                   , local_usergroups=0
                    , encryption='SHA', read_only=0, REQUEST=None
                    ):
         """ Edit the LDAPUserFolder Object """
@@ -371,6 +391,8 @@ class LDAPUserFolder(BasicUserFolder):
         self.users_scope = users_scope
         self.groups_base = groups_base or users_base
         self.groups_scope = groups_scope
+        self.usergroups_base = usergroups_base or users_base
+        self.usergroups_scope = usergroups_scope
         self.read_only = not not read_only
 
         self._delegate.edit( login_attr, users_base, rdn_attr
@@ -387,6 +409,7 @@ class LDAPUserFolder(BasicUserFolder):
         self._binduid_usage = int(binduid_usage)
 
         self._local_groups = not not local_groups
+        self._local_usergroups = not not local_usergroups
 
         if encryption == 'crypt' and crypt is None:
             encryption = 'SHA'
@@ -542,7 +565,7 @@ class LDAPUserFolder(BasicUserFolder):
                 self._log.log(7, msg)
             return cached_user
 
-        user_roles, user_dn, user_attrs = self._lookupuser(uid=name, pwd=pwd)
+        user_roles, user_dn, user_attrs, user_groups = self._lookupuser(uid=name, pwd=pwd)
         if user_dn is None:
             msg = 'getUser: "%s" not found' % name
             self.verbose > 3 and self._log.log(4, msg)
@@ -564,6 +587,7 @@ class LDAPUserFolder(BasicUserFolder):
         user_obj = LDAPUser( login_name
                            , pwd or 'undef'
                            , user_roles or []
+                           , user_groups or []
                            , []
                            , user_dn
                            , user_attrs
@@ -888,6 +912,83 @@ class LDAPUserFolder(BasicUserFolder):
         return group_list
 
 
+    security.declareProtected(manage_users, 'getUserGroups')
+    def getUserGroups(self, dn='*', attr=None, pwd=''):
+        """
+            returns a list of possible user groups from the ldap tree
+            (Used e.g. in usergroups.dtml) or, if a DN is passed
+            in, all user groups for that particular DN.
+        """
+        usergroup_list = []
+
+        if self._local_usergroups:
+            if dn != '*':
+                all_usergroups_list = self._usergroups_store.get(dn) or []
+            else:
+                all_usergroups_list = self._additional_usergroups
+
+            for usergroup in all_usergroups_list:
+                if attr is None:
+                    usergroup_list.append((usergroup, usergroup))
+                else:
+                    usergroup_list.append(usergroup)
+
+            usergroup_list.sort()
+
+        else:
+            ugscope = ldap_scopes[self.usergroups_scope]
+
+            if dn != '*':
+                f_template = '(&(objectClass=%s)(%s=%s))'
+                usergroup_filter = '(|'
+
+                for g_name, m_name in GROUP_MEMBER_MAP.items():
+                    fltr = filter_format(f_template, (g_name, m_name, dn))
+                    usergroup_filter += fltr
+
+                usergroup_filter += ')'
+
+            else:
+                usergroup_filter = '(|'
+
+                for g_name in GROUP_MEMBER_MAP.keys():
+                    fltr = filter_format('(objectClass=%s)', (g_name,))
+                    usergroup_filter += fltr
+
+                usergroup_filter += ')'
+
+            res = self._delegate.search( base=self.usergroups_base
+                                       , scope=ugscope
+                                       , filter=usergroup_filter
+                                       , attrs=['cn']
+                                       , bind_dn=''
+                                       , bind_pwd=''
+                                       )
+
+            exc = res['exception']
+            if exc:
+                if attr is None:
+                    usergroup_list = (('', exc),)
+                else:
+                    usergroup_list = (exc,)
+            elif res['size'] > 0:
+                res_dicts = res['results']
+                for i in range(res['size']):
+                    dn = res_dicts[i].get('dn')
+                    try:
+                        cn = res_dicts[i]['cn'][0]
+                    except KeyError:    # NDS oddity
+                        cn = explode_dn(dn, 1)[0]
+
+                    if attr is None:
+                        usergroup_list.append((cn, dn))
+                    elif attr == 'cn':
+                        usergroup_list.append(cn)
+                    elif attr == 'dn':
+                        usergroup_list.append(dn)
+
+        return usergroup_list
+
     security.declareProtected(manage_users, 'getGroupType')
     def getGroupType(self, group_dn):
         """ get the type of group """
@@ -899,8 +1000,9 @@ class LDAPUserFolder(BasicUserFolder):
 
         else:
             group_type = 'n/a'
+            gscope = ldap_scopes[self.groups_scope]
             res = self._delegate.search( base=group_dn
-                                       , scope=BASE
+                                       , scope=gscope # XXX was BASE
                                        , attrs=['objectClass']
                                        )
 
@@ -922,6 +1024,42 @@ class LDAPUserFolder(BasicUserFolder):
                     group_type = g_types[0]
 
         return group_type
+
+
+    security.declareProtected(manage_users, 'getUserGroupType')
+    def getUserGroupType(self, usergroup_dn):
+        """ get the type of user group """
+        if self._local_usergroups:
+            if usergroup_dn in self._additional_usergroups:
+                group_type = 'Custom Group'
+            else:
+                group_type = 'Zope Built-in Group'
+
+        else:
+            usergroup_type = 'n/a'
+            ugscope = ldap_scopes[self.usergroups_scope]
+            res = self._delegate.search( base=usergroup_dn
+                                       , scope=ugscope
+                                       , attrs=['objectClass']
+                                       )
+
+            if res['exception']:
+                msg = 'getUserGroupType: No group "%s" (%s)' % (
+                    usergroup_dn, res['exception'])
+                self.verbose > 1 and self._log.log(2, msg)
+
+            else:
+                groups = GROUP_MEMBER_MAP.keys()
+                l_groups = [x.lower() for x in groups]
+                g_attrs = res['results'][0]
+                group_obclasses = g_attrs.get('objectClass', [])
+                group_obclasses.extend(g_attrs.get('objectclass', []))
+                g_types = [x for x in group_obclasses if x.lower() in l_groups]
+
+                if len(g_types) > 0:
+                    usergroup_type = g_types[0]
+
+        return usergroup_type
 
 
     security.declareProtected(manage_users, 'getGroupMappings')
@@ -981,7 +1119,7 @@ class LDAPUserFolder(BasicUserFolder):
 
     security.declareProtected(view_management_screens, 'getProperty')
     def getProperty(self, prop_name, default=''):
-        """ Get at LDAPUserManager properties """
+        """ Get at LDAPUserFolder properties """
         return getattr(self, prop_name, default)
 
 
@@ -1015,6 +1153,27 @@ class LDAPUserFolder(BasicUserFolder):
     def getSchemaConfig(self):
         """ Retrieve the LDAP schema configuration """
         return self._ldapschema
+
+
+##     # UserGroupsFolder specific APIs XXX needed ?
+
+##     security.declareProtected(manage_users, 'userFolderAddGroup')
+##     def userFolderAddGroup(self, groupname, **kw):
+##         """Creates a group"""
+##         self.manage_addUserGroup(groupname)
+
+
+##     security.declareProtected(manage_users, 'userFolderDelGroups')
+##     def userFolderDelGroups(self, groupnames):
+##         """Deletes groups"""
+##         self.manage_deleteUserGroups(groupnames)
+
+
+##     security.declareProtected(manage_users, 'getGroupById')
+##     def getGroupById(self, groupname):
+##         """Returns the given group"""
+##         # XXX CPS implement this...
+##         raise NotImplementedError
 
 
     security.declareProtected(EDIT_PERMISSION, 'manage_addLDAPSchemaItem')
@@ -1112,6 +1271,51 @@ class LDAPUserFolder(BasicUserFolder):
             return self.manage_grouprecords(manage_tabs_message=msg)
 
 
+    security.declareProtected(manage_users, 'manage_addUserGroup')
+    def manage_addUserGroup( self
+                           , newusergroup_name
+                           , newusergroup_type='groupOfUniqueNames'
+                           , REQUEST=None
+                           ):
+        """ Add a new group in usergroups_base """
+        if self._local_usergroups and newusergroup_name:
+            add_usergroups = self._additional_usergroups
+
+            if newusergroup_name not in add_usergroups:
+                add_usergroups.append(newusergroup_name)
+
+            self._additional_usergroups = add_usergroups
+            msg = 'Added new user group %s' % (newusergroup_name)
+
+        elif newusergroup_name:
+            attributes = {}
+            attributes['cn'] = [newusergroup_name]
+            attributes['objectClass'] = ['top', newusergroup_type]
+
+            if self._binduid:
+                initial_member = self._binduid
+            else:
+                user = getSecurityManager().getUser()
+                try:
+                    initial_member = user.getUserDN()
+                except:
+                    initial_member = ''
+
+            attributes[GROUP_MEMBER_MAP.get(newusergroup_type)] =initial_member
+
+            err_msg = self._delegate.insert( base=self.usergroups_base
+                                           , rdn='cn=%s' % newusergroup_name
+                                           , attrs=attributes
+                                           )
+            msg = err_msg or 'Added new user group %s' % (newusergroup_name)
+
+        else:
+            msg = 'No user group name specified'
+
+        if REQUEST:
+            return self.manage_usergrouprecords(manage_tabs_message=msg)
+
+
     security.declareProtected(manage_users, 'manage_addUser')
     def manage_addUser(self, REQUEST=None, kwargs={}):
         """ Add a new user record to LDAP """
@@ -1195,6 +1399,35 @@ class LDAPUserFolder(BasicUserFolder):
                             except:
                                 raise
 
+                # CPS Groups
+
+                user_usergroups = source.get('user_usergroups', [])
+
+                if self._local_usergroups:
+                    self._usergroups_store[user_dn] = user_usergroups
+                else:
+                    if len(user_usergroups) > 0:
+                        usergroup_dns = []
+
+                        for usergroup in user_usergroups:
+                            try:
+                                exploded = explode_dn(usergroup)
+                                elements = len(exploded)
+                            except:
+                                elements = 1
+
+                            if elements == 1:  # simple string
+                                usergroup = 'cn=%s,%s' % (
+                                    str(usergroup), self.usergroups_base)
+
+                            usergroup_dns.append(usergroup)
+
+                            try:
+                                self.manage_editUserGroups(user_dn,
+                                                           usergroup_dns)
+                            except:
+                                raise
+
                 msg = 'New user %s added' % user_dn
             except Exception, e:
                 msg = str(e)
@@ -1209,6 +1442,8 @@ class LDAPUserFolder(BasicUserFolder):
     security.declareProtected(manage_users, 'manage_deleteGroups')
     def manage_deleteGroups(self, dns=[], REQUEST=None):
         """ Delete groups from groups_base """
+        msg = ''
+
         if len(dns) < 1:
             msg = 'You did not specify groups to delete!'
 
@@ -1235,6 +1470,36 @@ class LDAPUserFolder(BasicUserFolder):
             return self.manage_grouprecords(manage_tabs_message=msg)
 
 
+    security.declareProtected(manage_users, 'manage_deleteUserGroups')
+    def manage_deleteUserGroups(self, dns=[], REQUEST=None):
+        """ Delete user groups from usergroups_base """
+        if len(dns) < 1:
+            msg = 'You did not specify user groups to delete!'
+
+        else:
+            if self._local_usergroups:
+                add_usergroups = self._additional_usergroups
+                for dn in dns:
+                    if dn in add_usergroups:
+                        del add_usergroups[add_usergroups.index(dn)]
+
+                self._additional_usergroups = add_usergroups
+                msg = ''
+
+            else:
+                for dn in dns:
+                    msg = self._delegate.delete(dn)
+
+                    if msg:
+                        break
+
+            msg = msg or 'Deleted user group(s):<br> %s' % '<br>'.join(dns)
+            self._clearCaches()
+
+        if REQUEST:
+            return self.manage_usergrouprecords(manage_tabs_message=msg)
+
+
     security.declareProtected(manage_users, 'manage_deleteUsers')
     def manage_deleteUsers(self, dns=[], REQUEST=None):
         """ Delete all users in list dns """
@@ -1256,20 +1521,36 @@ class LDAPUserFolder(BasicUserFolder):
                 if self._local_groups:
                     if dn in self._groups_store.keys():
                         del self._groups_store[dn]
+                else:
+                    for group in user_groups:
+                        group_type = self.getGroupType(group)
+                        member_type = GROUP_MEMBER_MAP.get(group_type)
 
-                    continue
+                        msg = self._delegate.modify( dn=group
+                                                   , mod_type=DELETE
+                                                   , attrs={member_type : [dn]}
+                                                   )
 
-                for group in user_groups:
-                    group_type = self.getGroupType(group)
-                    member_type = GROUP_MEMBER_MAP.get(group_type)
+                        if msg:
+                            break
 
-                    msg = self._delegate.modify( dn=group
-                                               , mod_type=DELETE
-                                               , attrs={member_type : [dn]}
-                                               )
+                user_usergroups = self.getUserGroups(dn=dn, attr='dn')
 
-                    if msg:
-                        break
+                if self._local_usergroups:
+                    if dn in self._usergroups_store.keys():
+                        del self._usergroups_store[dn]
+                else:
+                    for usergroup in user_usergroups:
+                        usergroup_type = self.getUserGroupType(usergroup)
+                        member_type = GROUP_MEMBER_MAP.get(usergroup_type)
+
+                        msg = self._delegate.modify( dn=usergroup
+                                                   , mod_type=DELETE
+                                                   , attrs={member_type : [dn]}
+                                                   )
+
+                        if msg:
+                            break
 
             msg = 'Deleted user(s):<br> %s' % '<br>'.join(dns)
             self._clearCaches()
@@ -1338,6 +1619,51 @@ class LDAPUserFolder(BasicUserFolder):
                                                )
 
         msg = msg or 'Roles changed for %s' % (user_dn)
+        user_obj = self.getUserByDN(user_dn)
+        if user_obj is not None:
+            self._expireUser(user_obj)
+
+        if REQUEST:
+            return self.manage_userrecords( manage_tabs_message=msg
+                                          , user_dn=user_dn
+                                          )
+
+
+    security.declareProtected(manage_users, 'manage_editUserGroups')
+    def manage_editUserGroups(self, user_dn, usergroup_dns=[], REQUEST=None):
+        """ Edit the user groups of a user """
+        msg = ''
+        all_usergroups = self.getUserGroups(attr='dn')
+        cur_usergroups = self.getUserGroups(dn=user_dn, attr='dn')
+        group_dns = []
+        for usergroup in usergroup_dns:
+            if usergroup.find('=') == -1:
+                group_dns.append('cn=%s,%s' % (usergroup, self.groups_base))
+            else:
+                group_dns.append(usergroup)
+
+        if self._local_usergroups:
+            if len(usergroup_dns) == 0:
+                del self._usergroups_store[user_dn]
+            else:
+                self._usergroups_store[user_dn] = usergroup_dns
+
+        else:
+            for usergroup in all_usergroups:
+                member_attr = GROUP_MEMBER_MAP.get(self.getUserGroupType(usergroup))
+
+                if usergroup in cur_usergroups and usergroup not in group_dns:
+                    msg = self._delegate.modify( usergroup
+                                               , DELETE
+                                               , {member_attr : [user_dn]}
+                                               )
+                elif usergroup in group_dns and usergroup not in cur_usergroups:
+                    msg = self._delegate.modify( usergroup
+                                               , ADD
+                                               , {member_attr : [user_dn]}
+                                               )
+
+        msg = msg or 'User groups changed for %s' % (user_dn)
         user_obj = self.getUserByDN(user_dn)
         if user_obj is not None:
             self._expireUser(user_obj)
@@ -1452,6 +1778,27 @@ class LDAPUserFolder(BasicUserFolder):
                                                , {member_type : [new_dn]}
                                                )
 
+            # CPS Groups
+
+            old_usergroups = self.getUserGroups(dn=old_dn, attr='dn')
+
+            if self._local_usergroups:
+                if self._usergroups_store.get(old_dn):
+                    del self._usergroups_store[old_dn]
+                self._usergroups_store[new_dn] = old_usergroups
+            else:
+                for usergroup in old_usergroups:
+                    usergroup_type = self.getUserGroupType(usergroup)
+                    member_type = GROUP_MEMBER_MAP.get(usergroup_type)
+                    msg = self._delegate.modify( usergroup
+                                               , DELETE
+                                               , {member_type : [old_dn]}
+                                               )
+                    msg = self._delegate.modify( usergroup
+                                               , ADD
+                                               , {member_type : [new_dn]}
+                                               )
+
         self._expireUser(cur_cn)
         msg = msg or 'User %s changed' % (new_dn or user_dn)
 
@@ -1538,10 +1885,12 @@ class LDAPUserFolder(BasicUserFolder):
             return self.manage_cache(manage_tabs_message=msg)
 
 
-def manage_addLDAPUserFolder( self, title, LDAP_server, login_attr
+def manage_addLDAPUserGroupsFolder( self, title, LDAP_server, login_attr
                             , users_base, users_scope, roles, groups_base
-                            , groups_scope, binduid, bindpwd, binduid_usage=1
-                            , rdn_attr='cn', local_groups=0, use_ssl=0
+                            , groups_scope, usergroups_base, usergroups_scope
+                            , binduid, bindpwd, binduid_usage=1
+                            , rdn_attr='cn', local_groups=0
+                            , local_usergroups=0, use_ssl=0
                             , encryption='SHA', read_only=0, REQUEST=None
                             ):
     """ Called by Zope to create and install an LDAPUserFolder """
@@ -1552,8 +1901,10 @@ def manage_addLDAPUserFolder( self, title, LDAP_server, login_attr
 
     else:
         n = LDAPUserFolder( title, LDAP_server, login_attr, users_base, users_scope
-                          , roles, groups_base, groups_scope, binduid, bindpwd
+                          , roles, groups_base, groups_scope, usergroups_base
+                          , usergroups_scope, binduid, bindpwd
                           , binduid_usage, rdn_attr, local_groups=local_groups
+                          , local_usergroups=local_usergroups
                           , use_ssl=not not use_ssl, encryption=encryption
                           , read_only=read_only, REQUEST=None
                           )
@@ -1561,7 +1912,7 @@ def manage_addLDAPUserFolder( self, title, LDAP_server, login_attr
         this_folder._setObject('acl_users', n)
         this_folder.__allow_groups__ = self.acl_users
         
-        msg = 'Added+LDAPUserFolder'
+        msg = 'Added+LDAPUserGroupsFolder'
  
     # return to the parent object's manage_main
     if REQUEST:

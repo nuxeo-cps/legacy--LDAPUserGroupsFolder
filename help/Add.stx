@@ -49,18 +49,31 @@ LDAPUserFolder - Add: Create a new link to an LDAP Directory
 
      'User Search Scope' -- Choose the depth for all searches from the user search base dn
 
-     'Group storage' -- Choose where to store the group (a.k.a. Role) information
+     'Role storage' -- Choose where to store the role information
        for users. You can either store roles inside LDAP itself or you can store it
        inside the LDAP User Folder, which is simpler and does not require that LDAP
        deals with user roles at all.
 
+     'Search base DN for roles' -- The DN for the branch of your LDAP database that 
+       contains role records. These role records are of the LDAP class 
+       "groupOfUniqueNames" and the entry CN attribute constitutes the group name. 
+       LDAP roles embody Zope roles. A user which is part of a "Manager" LDAP role will 
+       have the "Manager" role after authenticating through the LDAPUserFolder.
+       If you have chosen to store roles inside the user folder itself this setting
+       will be disregarded.
+
+     'Role Search Scope' -- Choose the depth for all searches from the role search base 
+       dn. If you have chosen to store roles inside the user folder itself this setting 
+       will be disregarded.
+
+     'Group storage' -- Choose where to store the group information
+       for users. You can either store groups inside LDAP itself or you can store it
+       inside the LDAP User Folder, which is simpler and does not require that LDAP
+       deals with user groups at all.
+
      'Search base DN for groups' -- The DN for the branch of your LDAP database that 
        contains group records. These group records are of the LDAP class 
        "groupOfUniqueNames" and the entry CN attribute constitutes the group name. 
-       Groups embody Zope roles. A user which is part of a "Manager" group will 
-       have the "Manager" role after authenticating through the LDAPUserFolder.
-       If you have chosen to store groups inside the user folder itself this setting
-       will be disregarded.
 
      'Group Search Scope' -- Choose the depth for all searches from the group search base 
        dn. If you have chosen to store groups inside the user folder itself this setting 

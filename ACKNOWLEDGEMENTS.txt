@@ -1,0 +1,5 @@
+This product includes software developed by Jens Vagelpohl for use in
+the Z Object Publishing Environment (http://www.zope.org/).
+
+The group support was implemented by Florent Guillaume, Nuxeo
+<fg@nuxeo.com>.

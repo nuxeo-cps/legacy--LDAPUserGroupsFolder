@@ -1,0 +1,21 @@
+LDAPUserFolder - Groups: View, Add or Delete User Groups
+
+    Description
+
+        This view shows the groups exposed by your LDAP server for 
+        authentication purposes. You can add new groups or delete
+        existing records.
+
+    Controls
+        
+        'Delete' -- By checking one or more checkboxes next to group
+         records and then hitting Delete you can remove group records 
+         from LDAP. You will be presented with a confirmation screen
+         which will drop you back into the Groups view when you
+         hit "OK".
+
+        'Add Group' -- In order to add a new group you only need to
+         provide a group name and type. This name shuld be a "friendly" 
+         name, meaning it must not have any LDAP prefixes like "cn=".
+         Once you hit "Add" you will see the new group in the listing
+         or an error message above the listing.

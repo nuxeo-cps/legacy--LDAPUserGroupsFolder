@@ -227,7 +227,23 @@ class LDAPUser(BasicUser):
     def getCreationTime(self):
         """ When was this user object created? """
         return DateTime(self._created)
-    
+
+
+    #######################################################
+    # CPS User properties extended API
+    #######################################################
+
+    security.declareProtected(manage_users, 'setProperties')
+    def setProperties(self, **kw):
+        """Sets the values of a dictionary of properties"""
+        user_dn = self.getUserDN()
+        aclu = self.acl_users
+        aclu.manage_editUser(user_dn, kwargs=kw)
+        # Gotta set the new properties on myself too.
+        # To make sure it's syncronized, get it from the LDAP db.
+        user = aclu.getUserByDN(user_dn)
+        self._properties = user._properties.copy()
+
 
 InitializeClass(LDAPUser)
 

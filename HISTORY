@@ -1,4 +1,22 @@
 *******************************************
+** LDAPUserGroupsFolder V2.5.0 [R1 build 2004/03/08-14:16 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- _getUserddLoginFromDN return None if self._login_attr is not in
+  the LDAP, instead of raise TypeError
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- authorise integer properties for user, so we can use Boolean or 
+  Integer widgets
+
+*******************************************
 ** LDAPUserGroupsFolder V2.4.1 [R1 build 2004/02/10-13:34 by regebro]
 
 Bug fixes:

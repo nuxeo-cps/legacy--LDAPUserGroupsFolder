@@ -10,7 +10,7 @@ New features:
 - Local roles blocking now implemented. See NuxUserGroups for documentation.
 Bug fixes:
 ~~~~~~~~~~
-- user.setProperties failed on a DN with non-ascii chars.
+- fix: user.setProperties failed on a DN with non-ascii chars.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

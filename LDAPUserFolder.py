@@ -39,6 +39,12 @@ from utils import ldap_scopes, GROUP_MEMBER_MAP, filter_format
 from utils import _verifyUnicode, encoding
 from utils import _normalizeDN
 
+try:
+    from Products.CMFCore.utils import getToolByName
+    _cmf_support = 1
+except ImportError:
+    _cmf_support = 0
+
 _marker = []
 _dtmldir = os.path.join(package_home(globals()), 'dtml')
 addLDAPUserFolderForm = DTMLFile('addLDAPUserFolder', _dtmldir)
@@ -1552,17 +1558,24 @@ class LDAPUserFolder(BasicUserFolder):
 
     security.declarePrivate('mergedLocalRolesWithPath')
     def mergedLocalRolesWithPath(self, object, withgroups=0):
-        """Return a merging of object and its ancestors' __ac_local_roles__.
+        """Return a merging of object and its ancestors' local roles
+        with path information.
 
         When called with withgroups=1, the keys are
         of the form user:foo and group:bar.
 
-        The path corresponding
-        to the object where the role takes place is added
-        with the role in the result. In this case of the form :
+        The path (relative to the CMF portal) corresponding to the
+        object where the role takes place is added with the role in the
+        result. In this case of the form :
         {'user:foo': [{'url':url, 'roles':[Role0, Role1]},
-                    {'url':url, 'roles':[Role1]}],..}.
+                      {'url':url, 'roles':[Role1]}],..}.
+
+        This method only works if CMF is present.
         """
+        if not _cmf_support:
+            # No CMF support: now way to take advantages of this feature
+            return []
+        utool = getToolByName(object, 'portal_url')
         # Modified from AccessControl.User.getRolesInContext().
         merged = {}
         object = getattr(object, 'aq_inner', object)
@@ -1571,7 +1584,7 @@ class LDAPUserFolder(BasicUserFolder):
                 dict = object.__ac_local_roles__ or {}
                 if callable(dict):
                     dict = dict()
-                obj_url = object.absolute_url()
+                obj_url = utool.getRelativeUrl(object)
                 for k, v in dict.items():
                     if withgroups:
                         k = 'user:'+k # groups
@@ -1585,7 +1598,7 @@ class LDAPUserFolder(BasicUserFolder):
                     dict = object.__ac_local_group_roles__ or {}
                     if callable(dict):
                         dict = dict()
-                    obj_url = object.absolute_url()
+                    obj_url = utool.getRelativeUrl(object)
                     for k, v in dict.items():
                         k = 'group:'+k
                         if merged.has_key(k):

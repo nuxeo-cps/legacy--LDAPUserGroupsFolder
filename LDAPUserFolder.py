@@ -1505,17 +1505,15 @@ class LDAPUserFolder(BasicUserFolder):
 
 
     security.declarePrivate('mergedLocalRoles')
-    def mergedLocalRoles(self, object, withgroups=0, withpath=None):
+    def mergedLocalRoles(self, object, withgroups=0):
         """Return a merging of object and its ancestors' __ac_local_roles__.
 
         When called with withgroups=1, the keys are
         of the form user:foo and group:bar.
         """
-        # XXX withpath must die soon...
         # Modified from AccessControl.User.getRolesInContext().
         merged = {}
         object = getattr(object, 'aq_inner', object)
-
         while 1:
             if hasattr(object, '__ac_local_roles__'):
                 dict = object.__ac_local_roles__ or {}
@@ -1550,7 +1548,60 @@ class LDAPUserFolder(BasicUserFolder):
                 object = getattr(object, 'aq_inner', object)
                 continue
             break
+        return merged
 
+    security.declarePrivate('mergedLocalRolesWithPath')
+    def mergedLocalRolesWithPath(self, object, withgroups=0):
+        """Return a merging of object and its ancestors' __ac_local_roles__.
+
+        When called with withgroups=1, the keys are
+        of the form user:foo and group:bar.
+
+        The path corresponding
+        to the object where the role takes place is added
+        with the role in the result. In this case of the form :
+        {'user:foo': [{'url':url, 'roles':[Role0, Role1]},
+                    {'url':url, 'roles':[Role1]}],..}.
+        """
+        # Modified from AccessControl.User.getRolesInContext().
+        merged = {}
+        object = getattr(object, 'aq_inner', object)
+        while 1:
+            if hasattr(object, '__ac_local_roles__'):
+                dict = object.__ac_local_roles__ or {}
+                if callable(dict):
+                    dict = dict()
+                obj_url = object.absolute_url()
+                for k, v in dict.items():
+                    if withgroups:
+                        k = 'user:'+k # groups
+                    if merged.has_key(k):
+                        merged[k].append({'url': obj_url, 'roles': v})
+                    else:
+                        merged[k] = [{'url': obj_url, 'roles': v}]
+            # deal with groups
+            if withgroups:
+                if hasattr(object, '__ac_local_group_roles__'):
+                    dict = object.__ac_local_group_roles__ or {}
+                    if callable(dict):
+                        dict = dict()
+                    obj_url = object.absolute_url()
+                    for k, v in dict.items():
+                        k = 'group:'+k
+                        if merged.has_key(k):
+                            merged[k].append({'url': obj_url, 'roles': v})
+                        else:
+                            merged[k] = [{'url': obj_url, 'roles': v}]
+            # end groups
+            if hasattr(object, 'aq_parent'):
+                object = object.aq_parent
+                object = getattr(object, 'aq_inner', object)
+                continue
+            if hasattr(object, 'im_self'):
+                object = object.im_self
+                object = getattr(object, 'aq_inner', object)
+                continue
+            break
         return merged
 
     def _allowedRolesAndUsers(self, ob):

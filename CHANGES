@@ -13,3 +13,5 @@ Bug fixes:
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 - In some cases correctly normalize DNs that contain spaces.
+- Implemented mergedLocalRolesWithPath and removed optional argument
+  withpath from mergedLocalRoles

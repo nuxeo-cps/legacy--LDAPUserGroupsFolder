@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
--
+- user.setProperties failed on a DN with non-ascii chars.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

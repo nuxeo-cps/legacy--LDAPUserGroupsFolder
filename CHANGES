@@ -3,10 +3,10 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--Local role blocking support is now declared
+-
 Bug fixes:
 ~~~~~~~~~~
-- searchUsers() : cope with options = None case
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

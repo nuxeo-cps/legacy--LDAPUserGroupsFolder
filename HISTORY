@@ -1,4 +1,20 @@
 *******************************************
+** LDAPUserGroupsFolder V2.8.1 [R1 build 2004/12/17-14:30 by astefanescu]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-Local role blocking support is now declared
+Bug fixes:
+~~~~~~~~~~
+- searchUsers() : cope with options = None case
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** LDAPUserGroupsFolder V2.8.0 [R1 build 2004/10/21-15:42 by ben]
 
 Requires:

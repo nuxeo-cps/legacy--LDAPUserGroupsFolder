@@ -9,6 +9,7 @@ New features:
 Bug fixes:
 ~~~~~~~~~~
 - Correctly work with groups stored in the ZODB.
+- Better conformance with Group API to work with NuxMetaDirerectories.
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~

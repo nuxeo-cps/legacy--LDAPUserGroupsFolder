@@ -164,7 +164,7 @@ class LDAPDelegate(Persistent):
 
         if conn is not None:
             try:
-                conn.simple_bind_s(user_dn, user_pwd)
+                conn.simple_bind_s(user_dn, to_utf8(user_pwd))
                 conn.search_s(self.u_base, BASE, '(objectClass=*)')
                 return conn
             except (AttributeError, ldap.SERVER_DOWN, ldap.NO_SUCH_OBJECT):
@@ -229,7 +229,7 @@ class LDAPDelegate(Persistent):
             connection.set_option(ldap.OPT_PROTOCOL_VERSION, ldap.VERSION2)
 
         # Now bind with the credentials given. Let exceptions propagate out.
-        connection.simple_bind_s(user_dn, user_pwd)
+        connection.simple_bind_s(user_dn, to_utf8(user_pwd))
 
         # Deny auto-chasing of referrals to be safe, we handle them instead
         try:

@@ -13,7 +13,7 @@ __version__='$Revision$'[11:-2]
 
 # General python imports
 import time, os, urllib
-from types import StringType
+from types import StringType, ListType, TupleType
 
 # Zope imports
 from Globals import DTMLFile, package_home, InitializeClass
@@ -664,7 +664,7 @@ class LDAPUserFolder(BasicUserFolder):
         dn = urllib.unquote(encoded_dn)
 
         res = self._delegate.search( base=dn
-                                   , scope=self.users_scope
+                                   , scope=BASE
                                    , attrs=attrs
                                    )
 
@@ -737,6 +737,43 @@ class LDAPUserFolder(BasicUserFolder):
         return result
 
 
+    security.declareProtected(manage_users, 'getUserGroupDetails')
+    def getUserGroupDetails(self, cn):
+        """Return all user group details."""
+        result = ()
+
+        if not self._local_usergroups:
+            res = self._delegate.search( base=self.usergroups_base
+                                       , scope=self.usergroups_scope
+                                       , filter=filter_format('(cn=%s)', (cn,))
+                                       , attrs=['uniqueMember', 'member']
+                                       )
+
+            if res['exception']:
+                exc = res['exception']
+                msg = 'getUserGroupDetails: No usergroup "%s" (%s)' % (cn, exc)
+                self._log.log(3, msg)
+                result = (('Exception', exc),)
+
+            elif res['size'] > 0:
+                result = res['results'][0].items()
+                result.sort()
+
+            else:
+                msg = 'getUserGroupDetails: No user group "%s"' % cn
+                self._log.log(3, msg)
+
+        else:
+            g_dn = cn
+            users = []
+            for user_dn, usergroup_dns in self._usergroups_store.items():
+                if g_dn in usergroup_dns:
+                    users.append(user_dn)
+            result = [('', users)]
+
+        return result
+
+
     security.declareProtected(manage_users, 'getGroupedUsers')
     def getGroupedUsers(self, groups=None):
         """ Return all those users that are in a group """
@@ -750,7 +787,9 @@ class LDAPUserFolder(BasicUserFolder):
         for group_id, group_dn in groups:
             group_details = self.getGroupDetails(group_id)
             for key, vals in group_details:
-                if key in member_attrs:
+                if key in member_attrs or key == '':
+                    # If the key is an empty string then the groups are
+                    # stored inside the user folder itself.
                     for dn in vals:
                         all_dns[dn] = 1
 
@@ -1174,6 +1213,199 @@ class LDAPUserFolder(BasicUserFolder):
 ##         # XXX CPS implement this...
 ##         raise NotImplementedError
 
+
+    def _getMappedProperties(self):
+        """Get a list of tuples for (ldap_attr, public_attr)."""
+        mapped = []
+        for ldap_attr, names in self.getSchemaConfig().items():
+            if names.get('public_name'):
+                mapped.append((ldap_attr, names['public_name']))
+        return mapped
+
+    def _addMappedPropertiesToEntry(self, entry, mapped):
+        """Add mapped properties to entry."""
+        for ldap_attr, public_attr in mapped:
+            if entry.has_key(ldap_attr):
+                entry[public_attr] = entry[ldap_attr]
+
+    def _removeMappedPropertiesFromEntry(self, entry, mapped):
+        """Remove mapped properties from entry."""
+        for ldap_attr, public_attr in mapped:
+            if entry.has_key(public_attr):
+                entry[ldap_attr] = entry[public_attr]
+                del entry[public_attr]
+
+
+    def _searchWithFilter(self, filter, roles=None, groups=None, attrs):
+        """Do a search on users.
+
+        Uses the given filter, and also filters on roles and groups.
+        """
+        if not filter:
+            filter = '(objectClass=*)'
+
+        res = self._delegate.search(base=self.users_base,
+                                    scope=self.users_scope,
+                                    filter=filter,
+                                    attrs=attrs)
+        err = res['exception']
+        if err:
+            msg = "searchUsers Exception (%s)" % err
+            if self.verbose > 1:
+                self._log.log(2, msg)
+            return err
+
+        results = res['results']
+
+        if roles or groups:
+            member_attrs = GROUP_MEMBER_MAP.values() + ['']
+            role_dns = {}
+            for role in roles or []:
+                for key, user_dns in self.getGroupDetails(role):
+                    if key in member_attrs:
+                        for dn in user_dns:
+                            role_dns[dn] = None
+            group_dns = {}
+            for group in groups or []:
+                for key, user_dns in self.getUserGroupDetails(group):
+                    if key in member_attrs:
+                        for dn in user_dns:
+                            group_dns[dn] = None
+
+            # Intersect dns
+            if roles and not groups:
+                dns = roles_dns
+            elif groups and not roles:
+                dns = group_dns
+            else: # roles and groups
+                if len(roles_dns) < len(group_dns):
+                    small, big = roles_dns, group_dns
+                else:
+                    small, big = group_dns, roles_dns
+                # Intersect
+                dns = {}
+                for dn in small.keys():
+                    if big.has_key(dn):
+                        dns[dn] = None
+
+            # Filter by those dns.
+            results = [e for e in results if dns.has_key(e['dn'])]
+
+        return results
+
+    #
+    # Extended User Folder API
+    #
+
+    def listUserProperties(self):
+        """Lists properties settable or searchable on the users."""
+        schema = self.getSchemaConfig()
+        attrs = {'dn': None}
+        for attr, names in schema.keys():
+            attrs[attr] = None
+            if names.get('public_name'):
+                # Add mapped attribute.
+                attrs[names['public_name']] = None
+        return attrs.keys()
+
+    def searchUsers(self, query={}, props=None, **kw):
+        """Search for users having certain properties.
+
+        If props is None, returns a list of ids:
+          ['user1', 'user2']
+
+        If props is not None, it must be sequence of property ids. The
+        method will return a list of tuples containing the user id and a
+        dictionary of available properties:
+          [('user1', {'email': 'foo', 'age': 75}), ('user2', {'age': 5})]
+        """
+        allowed_props = self.listUserProperties()
+        mapped = self._getMappedProperties()
+        kw.update(query)
+        query = kw
+        self._removeMappedPropertiesFromEntry(query, mapped)
+
+        filter_elems = []
+        for key, value in query.items():
+            if key not in allowed_props:
+                continue
+            if key == 'dn': # XXX treat it
+                continue
+            if not value:
+                continue
+            if value == '*':
+                value = ''
+            if isinstance(value, StringType):
+                if value:
+                    f = filter_format('(%s=*%s*)', (key, value))
+                else:
+                    f = filter_format('(%s=*)', (key,))
+            elif isinstance(value, ListType) or isinstance(value, TupleType):
+                fl = []
+                for v in value:
+                    fv = filter_format('(%s=%s)', (key, v))
+                    fl.append(fv)
+                f = ''.join(fl)
+                if len(fl) > 1:
+                    f = '(|%s)' % f
+            else:
+                raise ValueError("Bad value %s for '%s'" % `value`, key)
+            filter_elems.append(f)
+        filter = ''.join(filter_elems)
+        if len(filter_elems) > 1:
+            filter = '(&%s)' % filter
+
+        # Do the search.
+
+        if props is None:
+            attrs = []
+        else:
+            attrs = [p for p in props if p in allowed_props]
+        login_attr = self._login_attr
+        if login_attr not in attrs:
+            attrs.append(login_attr)
+
+        results = self._searchWithFilter(filter,
+                                         roles=query.get('roles'),
+                                         groups=query.get('groups'),
+                                         attrs=attrs)
+
+        if isinstance(results, StringType):
+            err = results
+            msg = "searchUsers Exception (%s)" % err
+            if self.verbose > 1:
+                self._log.log(2, msg)
+            if props is None:
+                return [err]
+            else:
+                return [(err, {})]
+
+        # Prepare the results.
+
+        if props is None:
+            if login_attr == 'dn':
+                return [e['dn'] for e in results]
+            else:
+                return [e[login_attr][0] for e in results]
+
+        schema = self.getSchemaConfig()
+        users = []
+        for e in results:
+            entry = {}
+            for attr, value in e.items():
+                if attr == 'dn':
+                    pass
+                elif schema.get(attr, {}).get('multivalued'):
+                    pass
+                else:
+                    value = '; '.join(value)
+                entry[attr] = value
+                if attr == login_attr:
+                    id = value
+            self._addMappedPropertiesToEntry(entry, mapped)
+            users.append((id, entry))
+
+        return users
 
     #
     # CPS User Folder behavior.

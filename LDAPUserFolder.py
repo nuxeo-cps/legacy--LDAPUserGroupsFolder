@@ -37,6 +37,7 @@ from SimpleCache import SimpleCache
 from utils import _createLDAPPassword, to_utf8, crypt
 from utils import ldap_scopes, GROUP_MEMBER_MAP, filter_format
 from utils import _verifyUnicode, encoding
+from utils import _normalizeDN
 
 _marker = []
 _dtmldir = os.path.join(package_home(globals()), 'dtml')
@@ -1267,13 +1268,13 @@ class LDAPUserFolder(BasicUserFolder):
                 for key, user_dns in self.getGroupDetails(role):
                     if key in member_attrs:
                         for dn in user_dns:
-                            role_dns[dn] = None
+                            role_dns[_normalizeDN(dn)] = None
             group_dns = {}
             for group in groups or []:
                 for key, user_dns in self.getUserGroupDetails(group):
                     if key in member_attrs:
                         for dn in user_dns:
-                            group_dns[dn] = None
+                            group_dns[_normalizeDN(dn)] = None
 
             # Intersect dns
             if roles and not groups:
@@ -1292,7 +1293,8 @@ class LDAPUserFolder(BasicUserFolder):
                         dns[dn] = None
 
             # Filter by those dns.
-            results = [e for e in results if dns.has_key(e['dn'])]
+            results = [e for e in results
+                       if dns.has_key(_normalizeDN(e['dn']))]
 
             # XXX FIXME The results entries are missing roles and groups
             # props (if in attrs)... But fixing it means requerying them

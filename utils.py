@@ -10,6 +10,7 @@ __version__='$Revision$'[11:-2]
 
 from types import UnicodeType, StringType
 import urllib, sha, SSHA, random, base64, codecs, string
+import re
 
 
 #################################################
@@ -45,6 +46,9 @@ encoding = 'latin1'
 #################################################
 # Helper methods for other modules
 #################################################
+
+def _normalizeDN(dn):
+    return re.sub(r',\s+', ',', dn)
 
 def _verifyUnicode(st):
     """ Verify that the string is unicode """

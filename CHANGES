@@ -12,4 +12,4 @@ Bug fixes:
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- In some cases correctly normalize DNs that contain spaces.

@@ -11,7 +11,7 @@ Bug fixes:
 ~~~~~~~~~~
 - Correctly work with groups stored in the ZODB.
 - Better conformance with Group API to work with NuxMetaDirerectories.
-- Correctly infer current user's groups and special groups.
+- Correctly infer current user's groups and special groups and computed groups.
 
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~

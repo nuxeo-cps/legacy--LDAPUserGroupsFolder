@@ -8,6 +8,7 @@ New features:
   - searchUsers
   - listUserProperties
 - Listing, getting and adding groups using user folder API works.
+- Adding roles using user folder API.
 
 Bug fixes:
 ~~~~~~~~~~

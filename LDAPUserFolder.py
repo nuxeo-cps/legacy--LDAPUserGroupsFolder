@@ -75,7 +75,7 @@ class LDAPUserFolder(BasicUserFolder):
 
     manage_options=(
         (
-        {'label' : 'Configure',	'action' : 'manage_main', 
+        {'label' : 'Configure',	'action' : 'manage_main',
          'help'  : ('LDAPUserGroupsFolder','Configure.stx')},
         {'label' : 'LDAP Schema', 'action' : 'manage_ldapschema',
          'help'  : ('LDAPUserGroupsFolder', 'Schema.stx')},
@@ -1353,13 +1353,14 @@ class LDAPUserFolder(BasicUserFolder):
         # If any default roles are set, delete them from the roles selected
         # in the query, to return all otherwise matching users.
         roles = query.get('roles')
-        for role in self._roles:
-            if role in roles:
-                roles.remove(role)
         if roles:
-            query['roles'] = roles
-        else:
-            del query['roles']
+            for role in self._roles:
+                if role in roles:
+                    roles.remove(role)
+            if roles:
+                query['roles'] = roles
+            else:
+                del query['roles']
 
         filter_elems = []
         for key, value in query.items():
@@ -1813,7 +1814,7 @@ class LDAPUserFolder(BasicUserFolder):
             base = '%s,%s' % (rdn, base)
         password = source.get('user_pw', '')
         confirm  = source.get('confirm_pw', '')
-        
+
         if password != confirm or password == '': 
             msg = 'The password and confirmation do not match!'
 

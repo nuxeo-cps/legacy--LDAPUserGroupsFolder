@@ -7,6 +7,7 @@ New features:
   keeping substing search default behaviour if this attribute is empty.
   Note that you can set this attr at install:
   portal.acl_users.search_substring_fields = ('email', 'sn')
+- Local roles blocking now implemented. See NuxUserGroups for documentation.
 Bug fixes:
 ~~~~~~~~~~
 - user.setProperties failed on a DN with non-ascii chars.

@@ -1518,7 +1518,7 @@ class LDAPUserFolder(BasicUserFolder):
             except TypeError:
                 LOG('LDAPUserFolder._getUserLoginFromDN', DEBUG,
                     'TypeError user_dn:%s ,_login_attr: %s, results: %s' %
-                    (user_dn, slef._login_attr, res['results']))
+                    (user_dn, self._login_attr, res['results']))
                 return None
         user_id = _verifyUnicode(user_id).encode(encoding)
         return user_id

@@ -1333,7 +1333,7 @@ class LDAPUserFolder(BasicUserFolder):
                 attrs[names['public_name']] = None
         return attrs.keys()
 
-    def searchUsers(self, query={}, props=None, **kw):
+    def searchUsers(self, query={}, props=None, options=None, **kw):
         """Search for users having certain properties.
 
         If props is None, returns a list of ids:

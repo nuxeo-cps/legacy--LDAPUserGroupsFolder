@@ -23,7 +23,7 @@ from Globals import InitializeClass
 from OFS.SimpleItem import SimpleItem
 
 # LDAPUserFolder package imports
-from utils import _verifyUnicode, encoding
+from utils import _verifyUnicode, encoding, to_utf8
 
 
 class LDAPUser(BasicUser):
@@ -411,7 +411,7 @@ class LDAPUser(BasicUser):
         aclu.manage_editUser(user_dn, kwargs=kw)
         # Gotta set the new properties on myself too.
         # To make sure it's syncronized, get it from the LDAP db.
-        user = aclu.getUserByDN(user_dn)
+        user = aclu.getUserByDN(to_utf8(user_dn))
         self._properties = user._properties.copy()
 
 InitializeClass(LDAPUser)

@@ -1258,6 +1258,14 @@ class LDAPUserFolder(BasicUserFolder):
                 entry[ldap_attr] = entry[public_attr]
                 del entry[public_attr]
 
+    def _removeMappedPropertiesFromAttrs(self, attrs, mapped):
+        """Remove mapped properties from entry."""
+        for ldap_attr, public_attr in mapped:
+            if public_attr in attrs:
+                attrs.remove(public_attr)
+                if not ldap_attr in attrs:
+                    attrs.append(ldap_attr)
+
 
     def _searchWithFilter(self, filter, roles=None, groups=None, attrs=[]):
         """Do a search on users.
@@ -1268,7 +1276,8 @@ class LDAPUserFolder(BasicUserFolder):
             filter = '(objectClass=*)'
 
         from zLOG import LOG, DEBUG
-        LOG('_searchWithFilter', DEBUG, 'filter=%s' % filter)
+        LOG('_searchWithFilter', DEBUG, 'filter=%s attrs=%s' %
+            (filter, attrs))
 
         res = self._delegate.search(base=self.users_base,
                                     scope=self.users_scope,
@@ -1415,6 +1424,7 @@ class LDAPUserFolder(BasicUserFolder):
             attrs = []
         else:
             attrs = [p for p in props if p in allowed_props]
+            self._removeMappedPropertiesFromAttrs(attrs, mapped)
         login_attr = self._login_attr
         if login_attr not in attrs:
             attrs.append(login_attr)

@@ -1434,6 +1434,11 @@ class LDAPUserFolder(BasicUserFolder):
     # XXX In need of refactoring.
     #
 
+    security.declareProtected(manage_users, 'getGroupNames')
+    def getGroupNames(self):
+        """Return a list of group names."""
+        return tuple(self.getUserGroups(attr='cn'))
+
     security.declarePrivate('mergedLocalRoles')
     def mergedLocalRoles(self, object, withgroups=0, withpath=None):
         """Return a merging of object and its ancestors' __ac_local_roles__.

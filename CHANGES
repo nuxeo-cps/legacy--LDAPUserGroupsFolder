@@ -22,3 +22,4 @@ New internal features:
 - Wrap user into user folder when returning it.
 - Implemented setProperties on the user object.
 - Implemented userFolderDelGroups.
+- Make sure we don't have duplicate subgroups.

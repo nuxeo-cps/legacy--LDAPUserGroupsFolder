@@ -1809,6 +1809,9 @@ class LDAPUserFolder(BasicUserFolder):
         if not password or not confirm or password != confirm:
             raise ValueError("Bad password or confirm")
         rdn_attr = self._rdnattr
+        # XXX actually the parameter name is really the login attr,
+        # but we need the rdn attr here and don't have it.
+        # XXX so this code assumes that login attr = rdn attr
         kwargs={rdn_attr: name,
                 'user_pw': password,
                 'confirm_pw': confirm,

@@ -2107,6 +2107,34 @@ class LDAPUserFolder(BasicUserFolder):
                                           , user_dn=user_dn
                                           )
 
+    security.declareProtected(manage_users, 'setGroupsOfUser')
+    def setGroupsOfUser(self, groupids, username):
+        """Set the user groups of a user.
+
+        Part of the CPS groups API
+        """
+        user = self.getUser(username)
+        user_dn = user.getUserDN()
+        return self.manage_editUserGroups(user_dn, list(groupids))
+
+    security.declareProtected(manage_users, 'setGroupsOfUser')
+    def setUsersOfGroup(self, userids, groupid):
+        userswithgroup = self.getUsersOfGroup(groupid)
+        for user in userswithgroup:
+            if user not in userids:
+                groups = list(self.getUser(user).getGroups())
+                groups.remove(groupid)
+                self.setGroupsOfUser(groups, user)
+
+        for user in userids:
+            if user not in userswithgroup:
+                groups = list(self.getUser(user).getGroups())
+                groups.append(groupid)
+                self.setGroupsOfUser(groups, user)
+
+    security.declareProtected(manage_users, 'setGroupsOfUser')
+    def getUsersOfGroup(self, groupid):
+        return self.searchUsers({'group': groupid})
 
     security.declareProtected(manage_users, 'manage_editUserGroups')
     def manage_editUserGroups(self, user_dn, usergroup_dns=[], REQUEST=None):

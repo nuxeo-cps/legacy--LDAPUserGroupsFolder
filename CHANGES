@@ -9,4 +9,5 @@ Bug fixes:
 -
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
--
+- _getUserLoginFromDN return None if self._login_attr is None
+  instead of raise TypeError

@@ -1287,6 +1287,7 @@ class LDAPUserFolder(BasicUserFolder):
 
         Uses the given filter, and also filters on roles and groups.
         """
+
         if not filter:
             filter = '(objectClass=*)'
 
@@ -1392,7 +1393,12 @@ class LDAPUserFolder(BasicUserFolder):
         method will return a list of tuples containing the user id and a
         dictionary of available properties:
           [('user1', {'email': 'foo', 'age': 75}), ('user2', {'age': 5})]
+
+          options is a dictionnary with keys:
+          - search_restricted_member_list : list of members on wich we want to
+          perform the research.  Just a matter of optimisation in here.
         """
+        restricted_search_member_list = options.get('search_restricted_member_list', [])
         allowed_props = self.listUserProperties()
         mapped = self._getMappedProperties()
         kw.update(query)
@@ -1465,6 +1471,7 @@ class LDAPUserFolder(BasicUserFolder):
         login_attr = self._login_attr
         if login_attr not in attrs:
             attrs.append(login_attr)
+
         results = self._searchWithFilter(filter,
                                          roles=query.get('roles'),
                                          groups=query.get('groups'),
@@ -1497,6 +1504,13 @@ class LDAPUserFolder(BasicUserFolder):
                 continue
             self._addMappedPropertiesToEntry(entry, mapped)
             users.append((id, entry))
+
+        #
+        # Restricted list of users might bave been specified
+        #
+
+        if restricted_search_member_list != []:
+            users = [x for x in users if x[0] in restricted_search_member_list]
 
         return users
 

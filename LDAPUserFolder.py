@@ -1236,7 +1236,7 @@ class LDAPUserFolder(BasicUserFolder):
                 del entry[public_attr]
 
 
-    def _searchWithFilter(self, filter, roles=None, groups=None, attrs):
+    def _searchWithFilter(self, filter, roles=None, groups=None, attrs=[]):
         """Do a search on users.
 
         Uses the given filter, and also filters on roles and groups.

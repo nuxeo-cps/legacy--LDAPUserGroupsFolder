@@ -1551,6 +1551,12 @@ class LDAPUserFolder(BasicUserFolder):
     security.declarePrivate('_setGroupSubgroups')
     def _setGroupSubgroups(self, groupname, subgroups):
         """Set the subgroups of a group."""
+        # Uniquify.
+        d = {}
+        for g in subgroups:
+            d[g] = None
+        subgroups = d.keys()
+
         if self._local_usergroups:
             store = self._subgroups_store
             if subgroups:

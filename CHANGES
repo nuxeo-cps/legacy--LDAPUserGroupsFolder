@@ -21,3 +21,4 @@ New internal features:
 - The standard _addUser and _doDelUsers methods are now available.
 - Wrap user into user folder when returning it.
 - Implemented setProperties on the user object.
+- Implemented userFolderDelGroups.

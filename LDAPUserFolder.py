@@ -1443,7 +1443,7 @@ class LDAPUserFolder(BasicUserFolder):
                 if len(fl) > 1:
                     f = '(|%s)' % f
             else:
-                raise ValueError("Bad value %s for '%s'" % `value`, key)
+                raise ValueError("Bad value %s for '%s'" % (`value`, key))
             filter_elems.append(f)
 
         for objclass in self._user_objclasses:

@@ -495,7 +495,7 @@ class LDAPUserFolder(BasicUserFolder):
         return tuple([(x[ln], x[pn]) for x in schema if x.get(pn, '')])
 
 
-    security.declareProtected('manage_users', 'getMultivaluedUserAttrs')
+    security.declareProtected(manage_users, 'getMultivaluedUserAttrs')
     def getMultivaluedUserAttrs(self):
         """ Return sequence of user attributes that are multi-valued"""
         schema = self.getSchemaDict()

@@ -238,13 +238,29 @@ class CPSGroup(SimpleItem):
     security = ClassSecurityInfo()
 
     def __init__(self, id, users, **kw):
+        self.id = id
+        self.users = tuple(users)
         #self.users = [_verifyUnicode(u).encode(encoding)
         #              for u in users]
-        self.users = tuple(users)
 
     security.declareProtected(manage_users, 'getUsers')
     def getUsers(self):
         """Get group users ids."""
         return self.users
+
+    security.declareProtected(manage_users, 'getTitle')
+    def getTitle(self):
+        """Get group title."""
+        return self.id
+
+    security.declareProtected(manage_users, 'setTitle')
+    def setTitle(self):
+        """Set group title."""
+        pass
+
+    security.declareProtected(manage_users, 'Title')
+    def Title(self):
+        """Get group title (old name)."""
+        return self.getTitle()
 
 InitializeClass(CPSGroup)

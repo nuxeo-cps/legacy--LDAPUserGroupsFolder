@@ -126,6 +126,12 @@ class LDAPUser(BasicUser):
         return self.domains
 
 
+    # CPS extension
+    security.declarePublic('hasLocalRolesBlocking')
+    def hasLocalRolesBlocking(self):
+        """Test if local roles blocking is implemented in this user folder."""
+        return 1
+
     #######################################################
     # Overriding these to enable context-based role
     # computation with the LDAPUserSatellite
@@ -133,51 +139,78 @@ class LDAPUser(BasicUser):
 
     # Basic version, derived from NuxUserGroups.
     def _getRolesInContext(self, object):
-        """Return the list of roles assigned to the user,
-           including local roles assigned in context of
-           the passed in object."""
+        """Get the list of roles assigned to the user.
+
+        This includes local roles assigned in the context of
+        the passed in object.
+
+        Knows about local roles blocking (roles starting with '-').
+        """
         name = self.getUserName()
         roles = self.getRoles()
         # deal with groups
         groups = self.getComputedGroups()
         # end groups
         local = {}
-        object = getattr(object, 'aq_inner', object)
+        stop_loop = 0
+        object = aq_inner(object)
         while 1:
+            # Collect all roles info
+            lrd = {}
             local_roles = getattr(object, '__ac_local_roles__', None)
             if local_roles:
                 if callable(local_roles):
-                    local_roles = local_roles()
-                dict = local_roles or {}
-                for r in dict.get(name, []):
-                    local[r] = 1
-            # deal with groups
+                    local_roles = local_roles() or {}
+                for r in local_roles.get(name, ()):
+                    if r:
+                        lrd[r] = None
             local_group_roles = getattr(object, '__ac_local_group_roles__', None)
             if local_group_roles:
                 if callable(local_group_roles):
-                    local_group_roles = local_group_roles()
-                dict = local_group_roles or {}
+                    local_group_roles = local_group_roles() or {}
                 for g in groups:
-                    for r in dict.get(g, []):
-                        local[r] = 1
-            # end groups
-            inner = getattr(object, 'aq_inner', object)
-            parent = getattr(inner, 'aq_parent', None)
-            if parent is not None:
-                object = parent
+                    for r in local_group_roles.get(g, ()):
+                        if r:
+                            lrd[r] = None
+            lr = lrd.keys()
+            # Positive role assertions
+            for r in lr:
+                if r[0] != '-':
+                    if not local.has_key(r):
+                        local[r] = 1 # acquired role
+            # Negative (blocking) role assertions
+            for r in lr:
+                if r[0] == '-':
+                    r = r[1:]
+                    if not r:
+                        # role '-' blocks all acquisition
+                        stop_loop = 1
+                        break
+                    if not local.has_key(r):
+                        local[r] = 0 # blocked role
+            if stop_loop:
+                break
+            if hasattr(object, 'aq_parent'):
+                object = aq_inner(object.aq_parent)
                 continue
             if hasattr(object, 'im_self'):
-                object = object.im_self
-                object = getattr(object, 'aq_inner', object)
+                object = aq_inner(object.im_self)
                 continue
             break
-        roles = list(roles) + local.keys()
+        roles = list(roles)
+        for r, v in local.items():
+            if v: # only if not blocked
+                roles.append(r)
         return roles
 
     def getRolesInContext(self, object):
-        """Return the list of roles assigned to the user,
-           including local roles assigned in context of
-           the passed in object."""
+        """Get the list of roles assigned to the user.
+
+        This includes local roles assigned in the context of
+        the passed in object.
+
+        Knows about local roles blocking (roles starting with '-').
+        """
         roles = self._getRolesInContext(object)
 
         acl_satellite = self._getSatellite(object)
@@ -224,51 +257,12 @@ class LDAPUser(BasicUser):
                     return 1
                 return None
 
-        # Still have not found a match, so check local roles. We do
-        # this manually rather than call getRolesInContext so that
-        # we can incur only the overhead required to find a match.
-        inner_obj = getattr(object, 'aq_inner', object)
-        user_name = self.getUserName()
-        # deal with groups
-        groups = self.getComputedGroups()
-        # end groups
-        while 1:
-            local_roles = getattr(inner_obj, '__ac_local_roles__', None)
-            if local_roles:
-                if callable(local_roles):
-                    local_roles = local_roles()
-                dict = local_roles or {}
-                local_roles = dict.get(user_name, [])
-                for role in object_roles:
-                    if role in local_roles:
-                        if self._check_context(object):
-                            return 1
-                        return 0
-            # deal with groups
-            local_group_roles = getattr(inner_obj, '__ac_local_group_roles__', None)
-            if local_group_roles:
-                if callable(local_group_roles):
-                    local_group_roles = local_group_roles()
-                dict = local_group_roles or {}
-                for g in groups:
-                    local_group_roles = dict.get(g, [])
-                    if local_group_roles:
-                        for role in object_roles:
-                            if role in local_group_roles:
-                                if self._check_context(object):
-                                    return 1
-                                return 0
-            # end groups
-            inner = getattr(inner_obj, 'aq_inner', inner_obj)
-            parent = getattr(inner, 'aq_parent', None)
-            if parent is not None:
-                inner_obj = parent
-                continue
-            if hasattr(inner_obj, 'im_self'):
-                inner_obj = inner_obj.im_self
-                inner_obj = getattr(inner_obj, 'aq_inner', inner_obj)
-                continue
-            break
+        # Check local roles, calling getRolesInContext to avoid too much
+        # complexity, at the expense of speed.
+        for role in self._getRolesInContext(object):
+            if role in object_roles:
+                return 1
+
         return None
 
 

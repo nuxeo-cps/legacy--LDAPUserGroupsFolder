@@ -1476,6 +1476,19 @@ class LDAPUserFolder(BasicUserFolder):
         return CPSGroup(groupname, users)
 
 
+    security.declareProtected(manage_users, 'userFolderAddRole')
+    def userFolderAddRole(self, role):
+        """Add a new role."""
+        # XXX Should it also be added to the container as zope roles?
+        self.manage_addGroup(role)
+
+
+    security.declareProtected(manage_users, 'userFolderAddGroup')
+    def userFolderAddGroup(self, group):
+        """Add a new group."""
+        self.manage_addUserGroup(group)
+
+
     security.declarePrivate('mergedLocalRoles')
     def mergedLocalRoles(self, object, withgroups=0, withpath=None):
         """Return a merging of object and its ancestors' __ac_local_roles__.

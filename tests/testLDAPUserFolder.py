@@ -515,6 +515,11 @@ class TestLDAPUserFolder(unittest.TestCase):
         self.assert_(not msg)
         aclu.userFolderAddRole('Role1')
         aclu.userFolderAddRole('Role2')
+        self.assert_('Role1' in self.folder.userdefined_roles())
+        self.assert_('Role2' in self.folder.userdefined_roles())
+        groups = [g[0] for g in aclu.getGroups()]
+        groups.sort()
+        self.assertEquals(groups, ['Role1', 'Role2'])
         aclu.setRolesOfUser(('Role1', 'Role2'), 'mgr')
         aclu.setUsersOfRole(('mgr', 'test'), 'Role1')
         roles = list(aclu.getUser('mgr').getRoles())
@@ -524,7 +529,11 @@ class TestLDAPUserFolder(unittest.TestCase):
         owners.sort()
         self.assert_(owners == ['mgr', 'test'])
         self.assert_(aclu.getUsersOfRole('Role2') == ['mgr'])
-
+        aclu.userFolderDelRoles(('Role2',))
+        self.assert_('Role2' not in self.folder.userdefined_roles())
+        groups = [g[0] for g in aclu.getGroups()]
+        groups.sort()
+        self.assertEquals(groups, ['Role1'])
 
     def testCPSGroupAPI(self):
         aclu = self.folder.acl_users

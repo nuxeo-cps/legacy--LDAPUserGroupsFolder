@@ -1601,6 +1601,18 @@ class LDAPUserFolder(BasicUserFolder):
         portal = self.aq_inner.aq_parent
         portal._addRole(role)
 
+    def userFolderDelRoles(self, rolenames):
+        """Delete roles"""
+        # First find the DN's for the roles in rolenames
+        roleDNs = []
+        for role in rolenames:
+            for id, attr in self.getGroupDetails(role):
+                if id == 'dn':
+                    roleDNs.append(attr)
+        # Deleted! 
+        self.manage_deleteGroups(roleDNs)
+        portal = self.aq_inner.aq_parent
+        portal._delRoles(rolenames, None)
 
     security.declareProtected(manage_users, 'userFolderAddGroup')
     def userFolderAddGroup(self, group):

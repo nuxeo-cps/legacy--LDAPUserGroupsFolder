@@ -13,7 +13,7 @@ __version__='$Revision$'[11:-2]
 
 # General python imports
 import time, os, urllib
-from types import StringType, ListType, TupleType
+from types import StringType, ListType, TupleType, IntType
 
 # Zope imports
 from Globals import DTMLFile, package_home, InitializeClass
@@ -2456,7 +2456,8 @@ class LDAPUserFolder(BasicUserFolder):
                 new = source.get(attr, '')
                 if isinstance(new, StringType):
                     new = [x.strip() for x in new.split(';')]
-
+                elif isinstance(new, IntType):
+                    new = [str(new)]
                 new_attrs[attr] = new
 
         if new_attrs:

@@ -1,4 +1,31 @@
 *******************************************
+** LDAPUserGroupsFolder V2.4.0 [R1 build 2004/02/02-18:10 by regebro]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Now based on LDAPUserFolder 2.3.
+- Implemented subgroups support when groups are stored in the ZODB.
+Bug fixes:
+~~~~~~~~~~
+- Correctly work with groups stored in the ZODB.
+- Better conformance with Group API to work with NuxMetaDirerectories.
+- Correctly infer current user's groups and special groups and computed groups.
+- Correctly ask for mapped attributes to be returned when doing a search.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+- In some cases correctly normalize DNs that contain spaces.
+- Implemented mergedLocalRolesWithPath and removed optional argument
+  withpath from mergedLocalRoles.
+- The standard _addUser and _doDelUsers methods are now available.
+- Wrap user into user folder when returning it.
+- Implemented setProperties on the user object.
+- Implemented userFolderDelGroups.
+- Make sure we don't have duplicate subgroups.
+
+*******************************************
 ** LDAPUserGroupsFolder V2.3.1 [R1 build 2003/11/19-20:54 by guillaum]
 
 ZODB Requires:

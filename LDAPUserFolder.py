@@ -27,6 +27,7 @@ from AccessControl.Permissions import view_management_screens, \
 from AccessControl.PermissionRole import rolesForPermissionOn
 from OFS.SimpleItem import SimpleItem
 from BTrees.OOBTree import OOBTree
+from zLOG import LOG, DEBUG, ERROR
 
 # LDAPUserFolder package imports
 from LDAPUser import LDAPUser, CPSGroup
@@ -1283,7 +1284,6 @@ class LDAPUserFolder(BasicUserFolder):
         if not filter:
             filter = '(objectClass=*)'
 
-        from zLOG import LOG, DEBUG, ERROR
         LOG('_searchWithFilter', DEBUG, 'filter=%s attrs=%s' %
             (filter, attrs))
 
@@ -1513,8 +1513,13 @@ class LDAPUserFolder(BasicUserFolder):
                                         )
             if res['exception'] or not res['size']:
                 return None
-
-            user_id = res['results'][0].get(self._login_attr)[0]
+            try:
+                user_id = res['results'][0].get(self._login_attr)[0]
+            except TypeError:
+                LOG('LDAPUserFolder._getUserLoginFromDN', DEBUG,
+                    'TypeError user_dn:%s ,_login_attr: %s, results: %s' %
+                    (user_dn, slef._login_attr, res['results']))
+                return None
         user_id = _verifyUnicode(user_id).encode(encoding)
         return user_id
 
@@ -1609,7 +1614,7 @@ class LDAPUserFolder(BasicUserFolder):
             for id, attr in self.getGroupDetails(role):
                 if id == 'dn':
                     roleDNs.append(attr)
-        # Deleted! 
+        # Deleted!
         self.manage_deleteGroups(roleDNs)
         portal = self.aq_inner.aq_parent
         portal._delRoles(rolenames, None)

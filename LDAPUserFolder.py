@@ -1000,9 +1000,8 @@ class LDAPUserFolder(BasicUserFolder):
 
         else:
             group_type = 'n/a'
-            gscope = ldap_scopes[self.groups_scope]
             res = self._delegate.search( base=group_dn
-                                       , scope=gscope # XXX was BASE
+                                       , scope=BASE
                                        , attrs=['objectClass']
                                        )
 
@@ -1037,9 +1036,8 @@ class LDAPUserFolder(BasicUserFolder):
 
         else:
             usergroup_type = 'n/a'
-            ugscope = ldap_scopes[self.usergroups_scope]
             res = self._delegate.search( base=usergroup_dn
-                                       , scope=ugscope
+                                       , scope=BASE
                                        , attrs=['objectClass']
                                        )
 

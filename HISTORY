@@ -1,4 +1,27 @@
 *******************************************
+** LDAPUserGroupsFolder V2.3.1 [R1 build 2003/11/19-20:54 by guillaum]
+
+ZODB Requires:
+~~~~~~~~~~~~~~
+-
+
+New features:
+~~~~~~~~~~~~~
+- Implementation of the new user folder API:
+  - searchUsers
+  - listUserProperties
+- Listing, getting and adding groups using user folder API works.
+- Adding roles using user folder API.
+
+Bug fixes:
+~~~~~~~~~~
+-
+
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** LDAPUserGroupsFolder V2.3.0 [R1 build 2003/11/10-18:15 by guillaum]
 
 ZODB Requires:

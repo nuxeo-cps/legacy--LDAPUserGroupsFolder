@@ -2079,9 +2079,22 @@ class LDAPUserFolder(BasicUserFolder):
             return self.manage_usergrouprecords(manage_tabs_message=msg)
 
 
+    # Standard user folder compatibility.
+    security.declarePrivate('_doDelUsers')
+    def _doDelUsers(self, names):
+        """Delete users."""
+        dns = [self.getUser(name).getUserDN() for name in names]
+        res = self.manage_deleteUsers(dns)
+        if res is not None:
+            raise ValueError(res)
+
+
     security.declareProtected(manage_users, 'manage_deleteUsers')
     def manage_deleteUsers(self, dns=[], REQUEST=None):
         """ Delete all users in list dns """
+        msg = ''
+        info = ''
+
         if len(dns) < 1:
             msg = 'You did not specify users to delete!'
 
@@ -2131,11 +2144,16 @@ class LDAPUserFolder(BasicUserFolder):
                         if msg:
                             break
 
-            msg = 'Deleted user(s):<br> %s' % '<br>'.join(dns)
+            info = 'Deleted user(s):<br> %s' % '<br>'.join(dns)
             self._clearCaches()
 
         if REQUEST:
+            msg = info or msg
             return self.manage_userrecords(manage_tabs_message=msg)
+        elif msg:
+            return msg
+        else:
+            return None
 
 
     security.declareProtected(manage_users, 'manage_editUserPassword')

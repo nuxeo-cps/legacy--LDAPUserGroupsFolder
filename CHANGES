@@ -18,6 +18,6 @@ New internal features:
 - In some cases correctly normalize DNs that contain spaces.
 - Implemented mergedLocalRolesWithPath and removed optional argument
   withpath from mergedLocalRoles.
-- The standard _addUser method is now available.
+- The standard _addUser and _doDelUsers methods are now available.
 - Wrap user into user folder when returning it.
 - Implemented setProperties on the user object.

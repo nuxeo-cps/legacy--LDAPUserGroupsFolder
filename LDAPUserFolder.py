@@ -1427,10 +1427,17 @@ class LDAPUserFolder(BasicUserFolder):
     #
 
     def _getUserLoginFromDN(self, user_dn):
-        """Return the login of a user from its DN."""
+        """Return the login of a user from its DN.
+
+        Returns None if the DN is invalid.
+        """
         # Check if we can get the login attribute from the dn.
-        rdn = user_dn.split(',')[0]
-        rdn_attr, rdn_value = rdn.split('=', 1)
+        try:
+            rdn = user_dn.split(',')[0]
+            rdn_attr, rdn_value = rdn.split('=', 1)
+        except (IndexError, ValueError):
+            # Invalid DN
+            return None
         if rdn_attr == self._login_attr:
             user_id = rdn_value
         else:

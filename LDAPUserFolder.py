@@ -36,6 +36,7 @@ from SimpleLog import SimpleLog
 from SimpleCache import SimpleCache
 from utils import _createLDAPPassword, to_utf8, crypt
 from utils import ldap_scopes, GROUP_MEMBER_MAP, filter_format
+from utils import _verifyUnicode, encoding
 
 _marker = []
 _dtmldir = os.path.join(package_home(globals()), 'dtml')

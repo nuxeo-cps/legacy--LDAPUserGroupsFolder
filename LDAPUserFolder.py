@@ -1215,11 +1215,18 @@ class LDAPUserFolder(BasicUserFolder):
 
 
     def _getMappedProperties(self):
-        """Get a list of tuples for (ldap_attr, public_attr)."""
+        """Get a list of tuples for (ldap_attr, public_attr).
+
+        login_attr -> 'id' is always considered a mapping.
+        """
         mapped = []
+        login_attr = self._login_attr
+        has_login = 0
         for ldap_attr, names in self.getSchemaConfig().items():
-            if names.get('public_name'):
-                mapped.append((ldap_attr, names['public_name']))
+            public_name = names['public_name']
+            if public_name:
+                mapped.append((ldap_attr, public_name))
+        mapped.append((login_attr, 'id'))
         return mapped
 
     def _addMappedPropertiesToEntry(self, entry, mapped):
@@ -1300,7 +1307,7 @@ class LDAPUserFolder(BasicUserFolder):
     def listUserProperties(self):
         """Lists properties settable or searchable on the users."""
         schema = self.getSchemaConfig()
-        attrs = {'dn': None}
+        attrs = {'dn': None, 'id': None}
         for attr, names in schema.items():
             attrs[attr] = None
             if names.get('public_name'):

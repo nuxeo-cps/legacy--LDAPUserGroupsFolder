@@ -4,7 +4,9 @@ ZODB Requires:
 
 New features:
 ~~~~~~~~~~~~~
--
+- Implementation of the new user folder API:
+  - searchUsers
+  - listUserProperties
 
 Bug fixes:
 ~~~~~~~~~~

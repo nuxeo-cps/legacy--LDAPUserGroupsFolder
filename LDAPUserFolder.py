@@ -1797,6 +1797,32 @@ class LDAPUserFolder(BasicUserFolder):
             return self.manage_usergrouprecords(manage_tabs_message=msg)
 
 
+    # Standard user folder compatibility.
+    security.declarePrivate('_addUser')
+    def _addUser(self, name, password, confirm, roles, domains, REQUEST=None,
+                 groups=None):
+        """Add a new user."""
+        if not name:
+            raise ValueError("Bad name: %s" % name)
+        if not password or not confirm or password != confirm:
+            raise ValueError("Bad password or confirm")
+        rdn_attr = self._rdnattr
+        kwargs={rdn_attr: name,
+                'user_pw': password,
+                'confirm_pw': confirm,
+                'user_roles': roles,
+                'user_usergroups': groups or [],
+                }
+        # The following are often mandatory in LDAP.
+        if rdn_attr != 'sn':
+            kwargs['sn'] = '.'
+        if rdn_attr != 'cn':
+            kwargs['cn'] = '.'
+        res = self.manage_addUser(kwargs=kwargs)
+        if res is not None:
+            raise ValueError(res)
+
+
     security.declareProtected(manage_users, 'manage_addUser')
     def manage_addUser(self, REQUEST=None, kwargs={}):
         """ Add a new user record to LDAP """

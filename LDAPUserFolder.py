@@ -1230,19 +1230,6 @@ class LDAPUserFolder(BasicUserFolder):
         return self._ldapschema
 
 
-##     # UserGroupsFolder specific APIs XXX needed ?
-
-##     security.declareProtected(manage_users, 'userFolderAddGroup')
-##     def userFolderAddGroup(self, groupname, **kw):
-##         """Creates a group"""
-##         self.manage_addUserGroup(groupname)
-
-
-##     security.declareProtected(manage_users, 'userFolderDelGroups')
-##     def userFolderDelGroups(self, groupnames):
-##         """Deletes groups"""
-##         self.manage_deleteUserGroups(groupnames)
-
     def _getMappedProperties(self):
         """Get a list of tuples for (ldap_attr, public_attr).
 
@@ -1570,7 +1557,7 @@ class LDAPUserFolder(BasicUserFolder):
                 store[groupname] = tuple(subgroups)
             elif store.has_key(groupname):
                 del store[groupname]
-        else:
+        elif subgroups:
             raise NotImplementedError("Cannot set subgroups for LDAP")
 
     security.declarePublic('test_getAllowedRolesAndUsers') # XXXXXXXX debug
@@ -1590,6 +1577,10 @@ class LDAPUserFolder(BasicUserFolder):
         """Add a new group."""
         self.manage_addUserGroup(group)
 
+    security.declareProtected(manage_users, 'userFolderDelGroups')
+    def userFolderDelGroups(self, groupnames):
+        """Delete groups"""
+        self.manage_deleteUserGroups(groupnames)
 
     security.declarePrivate('mergedLocalRoles')
     def mergedLocalRoles(self, object, withgroups=0):
@@ -2070,15 +2061,29 @@ class LDAPUserFolder(BasicUserFolder):
         else:
             if self._local_usergroups:
                 add_usergroups = self._additional_usergroups
+                subgroups_store = self._subgroups_store
                 for dn in dns:
                     if dn in add_usergroups:
                         del add_usergroups[add_usergroups.index(dn)]
+                    # Delete storage for this group.
+                    if subgroups_store.has_key(dn):
+                        del subgroups_store[dn]
+                    # Delete this group from other groups' subgroups.
+                    for g, subgroups in subgroups_store.items():
+                        if dn in subgroups:
+                            l = list(subgroups)
+                            while dn in l:
+                                l.remove(dn)
+                            subgroups_store[g] = tuple(l)
 
                 self._additional_usergroups = add_usergroups
                 msg = ''
 
             else:
                 for dn in dns:
+                    if dn.find('=') == -1:
+                        dn = 'cn=%s,%s' % (dn, self.usergroups_base)
+
                     msg = self._delegate.delete(dn)
 
                     if msg:
@@ -2275,7 +2280,8 @@ class LDAPUserFolder(BasicUserFolder):
         group_dns = []
         for usergroup in usergroup_dns:
             if usergroup.find('=') == -1:
-                group_dns.append('cn=%s,%s' % (usergroup, self.groups_base))
+                group_dns.append('cn=%s,%s' %
+                                 (usergroup, self.usergroups_base))
             else:
                 group_dns.append(usergroup)
 

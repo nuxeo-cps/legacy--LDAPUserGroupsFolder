@@ -3,10 +3,14 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
--
+- Added the fields "uid" and "mail" to the default LDAP schema, since everybody
+  always needs it.
 Bug fixes:
 ~~~~~~~~~~
--
+- Fixed manage_editUser that was not modifying mapped attributes. One effect of
+  that bug what that it was impossible to modify the email address of a user
+  since the CPSDirectory uses the "email" attribute and the LDAP inetOrgPerson
+  objectclass uses the "mail" attribute.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

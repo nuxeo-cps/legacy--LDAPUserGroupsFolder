@@ -21,6 +21,7 @@ from DateTime import DateTime
 from AccessControl import ClassSecurityInfo
 from Globals import InitializeClass
 from OFS.SimpleItem import SimpleItem
+from zLOG import LOG, INFO, DEBUG
 
 # LDAPUserFolder package imports
 from utils import _verifyUnicode, encoding, to_utf8
@@ -78,6 +79,15 @@ class LDAPUser(BasicUser):
     ######################################################
     # User interface not implemented in class BasicUser
     #######################################################
+
+    security.declarePrivate('setSecurityProfile')
+    def setSecurityProfile(self, password=None, roles=None, domains=None):
+        """Set the user's basic security profile"""
+        LOG('setSecurityProfile', DEBUG, "xxxxxxxxxxxxxxxxxxxxx   ...")
+        aclu = self.acl_users
+        LOG('setSecurityProfile', DEBUG, "before _doChangeUser")
+        aclu._doChangeUser(self.getUserName(), password, roles, domains)
+
 
     security.declarePrivate('_getPassword')
     def _getPassword(self):

@@ -168,16 +168,26 @@ class LDAPUserFolder(BasicUserFolder):
         self.verbose = 2    # _log needs it
         self._log = SimpleLog()
         self._delegate = LDAPDelegate()
-        self._ldapschema = { 'cn' : { 'ldap_name' : 'cn'
-                                    , 'friendly_name' : 'Canonical Name'
-                                    , 'multivalued' : ''
-                                    , 'public_name' : ''
-                                    }
-                           , 'sn' : { 'ldap_name' : 'sn'
-                                    , 'friendly_name' : 'Last Name'
-                                    , 'multivalued' : ''
-                                    , 'public_name' : ''
-                                    }
+        self._ldapschema = {'cn' : {'ldap_name' : 'cn',
+                                    'friendly_name' : 'Canonical Name',
+                                    'multivalued' : '',
+                                    'public_name' : '',
+                                    },
+                            'sn' : {'ldap_name' : 'sn',
+                                    'friendly_name' : 'Last Name',
+                                    'multivalued' : '',
+                                    'public_name' : '',
+                                    },
+                            'uid' : {'ldap_name' : 'uid',
+                                    'friendly_name' : 'Username',
+                                    'multivalued' : '',
+                                    'public_name' : '',
+                                    },
+                            'mail' : {'ldap_name' : 'mail',
+                                    'friendly_name' : 'Email address',
+                                    'multivalued' : '',
+                                    'public_name' : 'email',
+                                    },
                            }
 
         # Local DN to role/usergroup tree for storing roles
@@ -1355,7 +1365,7 @@ class LDAPUserFolder(BasicUserFolder):
     #
 
     def _doChangeUser(self, name, password, roles, domains, **kw):
-        user=self.getUser(name)
+        user = self.getUser(name)
         user_dn = user.getUserDN()
         if password is not None:
             self.manage_editUserPassword(user_dn, password)
@@ -2499,9 +2509,16 @@ class LDAPUserFolder(BasicUserFolder):
         else:
             source = REQUEST
 
-        for attr in self.getSchemaConfig().keys():
-            if source.has_key(attr):
-                new = source.get(attr, '')
+        for attr, struct in self.getSchemaConfig().items():
+            attr_key = None
+            if struct.has_key('public_name'):
+                mapped_to = struct['public_name']
+                if mapped_to != '':
+                    attr_key = mapped_to
+            if attr_key is None and source.has_key(attr):
+                attr_key = attr
+            if attr_key is not None:
+                new = source.get(attr_key, '')
                 if isinstance(new, StringType):
                     new = [x.strip() for x in new.split(';')]
                 elif isinstance(new, IntType):

@@ -113,8 +113,8 @@ class TestLDAPUserFolder(unittest.TestCase):
         ae(len(acl.getLog()), 2)
         ae(len(acl._anonymous_cache.getCache()), 0)
         ae(len(acl._authenticated_cache.getCache()), 0)
-        ae(len(acl.getSchemaConfig().keys()), 2)
-        ae(len(acl.getSchemaDict()), 2)
+        ae(len(acl.getSchemaConfig().keys()), 4)
+        ae(len(acl.getSchemaDict()), 4)
         ae(len(acl._groups_store), 0)
         ae(len(acl.getProperty('additional_groups')), 0)
         ae(len(acl.getGroupMappings()), 0)
@@ -206,15 +206,15 @@ class TestLDAPUserFolder(unittest.TestCase):
     def testLDAPSchema(self):
         acl = self.folder.acl_users
         ae = self.assertEqual
-        ae(len(acl.getLDAPSchema()), 2)
-        ae(len(acl.getSchemaDict()), 2)
-        acl.manage_addLDAPSchemaItem( 'mail'
-                                    , 'Email'
+        ae(len(acl.getLDAPSchema()), 4)
+        ae(len(acl.getSchemaDict()), 4)
+        acl.manage_addLDAPSchemaItem( 'telephoneNumber'
+                                    , ''
                                     , ''
                                     , 'public'
                                     )
-        ae(len(acl.getLDAPSchema()), 3)
-        ae(len(acl.getSchemaDict()), 3)
+        ae(len(acl.getLDAPSchema()), 5)
+        ae(len(acl.getSchemaDict()), 5)
         cur_schema = acl.getSchemaConfig()
         self.assert_('mail' in cur_schema.keys())
         acl.manage_addLDAPSchemaItem( 'cn'
@@ -222,11 +222,11 @@ class TestLDAPUserFolder(unittest.TestCase):
                                     , ''
                                     , 'exists'
                                     )
+        ae(len(acl.getLDAPSchema()), 5)
+        ae(len(acl.getSchemaDict()), 5)
+        acl.manage_deleteLDAPSchemaItems(['cn', 'unknown', 'mail'])
         ae(len(acl.getLDAPSchema()), 3)
         ae(len(acl.getSchemaDict()), 3)
-        acl.manage_deleteLDAPSchemaItems(['cn', 'unknown', 'mail'])
-        ae(len(acl.getLDAPSchema()), 1)
-        ae(len(acl.getSchemaDict()), 1)
         cur_schema = acl.getSchemaConfig()
         self.assert_('mail' not in cur_schema.keys())
         self.assert_('cn' not in cur_schema.keys())
@@ -234,28 +234,29 @@ class TestLDAPUserFolder(unittest.TestCase):
     def testSchemaMappedAttrs(self):
         acl = self.folder.acl_users
         ae = self.assertEqual
-        ae(len(acl.getMappedUserAttrs()), 0)
-        acl.manage_addLDAPSchemaItem( 'mail'
-                                    , 'Email'
-                                    , ''
+        ae(len(acl.getMappedUserAttrs()), 1)
+        acl.manage_addLDAPSchemaItem( 'jpegPhoto'
+                                    , 'Photo'
+                                    , 'photo'
                                     , 'public'
                                     )
+        ae(len(acl.getMappedUserAttrs()), 2)
+        ae(acl.getMappedUserAttrs(),
+           (('mail', 'email'), ('jpegPhoto', 'public')))
+        acl.manage_deleteLDAPSchemaItems(['jpegPhoto'])
         ae(len(acl.getMappedUserAttrs()), 1)
-        ae(acl.getMappedUserAttrs(), (('mail', 'public'),))
-        acl.manage_deleteLDAPSchemaItems(['mail'])
-        ae(len(acl.getMappedUserAttrs()), 0)
 
     def testSchemaMultivaluedAttrs(self):
         acl = self.folder.acl_users
         ae = self.assertEqual
         ae(len(acl.getMultivaluedUserAttrs()), 0)
-        acl.manage_addLDAPSchemaItem( 'mail'
-                                    , 'Email'
+        acl.manage_addLDAPSchemaItem( 'mail2'
+                                    , 'Email2'
                                     , 'yes'
                                     , 'public'
                                     )
         ae(len(acl.getMultivaluedUserAttrs()), 1)
-        ae(acl.getMultivaluedUserAttrs(), ('mail',))
+        ae(acl.getMultivaluedUserAttrs(), ('mail2',))
 
     def testAddUser(self):
         acl = self.folder.acl_users

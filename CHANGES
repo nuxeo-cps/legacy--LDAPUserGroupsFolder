@@ -1,9 +1,3 @@
-Requires:
-~~~~~~~~~
--
-New features:
-~~~~~~~~~~~~~
--
 Bug fixes:
 ~~~~~~~~~~
 - Correctly work with groups stored in the ZODB.

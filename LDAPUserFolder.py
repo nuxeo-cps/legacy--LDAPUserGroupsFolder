@@ -67,6 +67,7 @@ class LDAPUserFolder(BasicUserFolder):
     id = 'acl_users'
     isAUserFolder = 1
 
+    search_substring_fields = ()
 
     #################################################################
     #
@@ -870,7 +871,12 @@ class LDAPUserFolder(BasicUserFolder):
         else:
             users_base = self.users_base
             if search_term:
-                search_str = filter_format( '(%s=*%s*)'
+                if self.search_substring_fields and \
+                       search_param not in self.search_substring_fields:
+                    fmt = '(%s=%s)'
+                else:
+                    fmt = '(%s=*%s*)'
+                search_str = filter_format( fmt
                                           , (search_param, search_term)
                                           )
             else:
@@ -1420,7 +1426,12 @@ class LDAPUserFolder(BasicUserFolder):
                 value = ''
             if isinstance(value, StringType):
                 if value:
-                    f = filter_format('(%s=*%s*)', (key, value))
+                    if self.search_substring_fields and \
+                           key not in self.search_substring_fields:
+                        fmt = '(%s=%s)'
+                    else:
+                        fmt = '(%s=*%s*)'
+                    f = filter_format(fmt, (key, value))
                 else:
                     f = filter_format('(%s=*)', (key,))
             elif isinstance(value, ListType) or isinstance(value, TupleType):

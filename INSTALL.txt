@@ -1,0 +1,66 @@
+Installing the LDAPUserFolder Product
+
+    You will need Zope version 2.4.0 or higher (which necessitates
+    Python version 2.0 or higher)!
+
+    This product does not require any special handling after unzipping
+    and untarring it in the Zope Products directory. You should do 
+    something like::
+
+        $ cp LDAPUserFolder-xyz.tgz <zope_root>/lib/python/Products
+        $ cd <zope_root>/lib/python/Products
+        $ tar zxvf LDAPUserFolder-xyz.tgz
+        <watch files being decompressed>
+
+    Windows users can use WinZip or similar, it can handle tarred 
+    gzip files. Make sure to move the extracted LDAPUserFolder 
+    folder to your Zope installation's lib/python/Products-folder.
+
+    That's all. Do not forget to restart Zope afterwards.
+
+
+    **Upgraders beware**
+
+    In order to avoid problems everyone who upgrades from a prior 
+    version of the LDAPUserFolder should delete and recreate any
+    LDAPUserFolder instance they have!
+
+    
+    **Important Hints**
+
+    Depending on your choice of Zope install (e.g. compiled from source
+    or binary version) you need to make sure that the python-ldap 
+    module (see README.txt) can be found by Zope.
+
+    The first step after compiling the python-ldap module is to find 
+    out if it works correctly by firing up your python interpreter 
+    and typing "import _ldap". Then hit return. If no error message shows 
+    up the module is compiled and installed correctly.
+
+    If after correctly installing and compiling the python-ldap 
+    module Zope still complains "ImportError: No module named ldap"
+    you need to find the module file (its name is "ldapmodule.so") and 
+    manually copy it into the LDAPUserFolder folder in your Zope 
+    Products folder. This will be the case with all those Zope installs 
+    that contain their own python binary, like the Linux binary install.
+
+    If you for some reason decide to run Zope on a certain OS from Redmond
+    you might have difficulties getting python-ldap in a precompiled 
+    version. Barry Pederson found the following website which might help:
+    http://www.it.uq.edu.au/personal/leonard/dc-prj/ldapmodule/
+    Barry also put all needed components (a LDAP DLL from the University
+    of Michigan LDAP distribution and precompiled python-ldap modules) up
+    in his member area on zope.org at:
+    
+    http://www.zope.org/Members/barryp/win32_ldap
+
+    This module can be copied into the LDAPUserFolder folder on the file 
+    system.
+
+    If you run the LDAP server on the same machine as your Zope instance and 
+    use python-ldap 2.0.0pre1-2.0.0pre4 you might experience severe slowdowns
+    due to a bug in those python-ldap versions. See this URL for more info::
+
+      http://www.geocrawler.com/archives/3/1568/2002/6/0/9027164/
+
+    See README.txt for any other dependencies and requirements.

@@ -1,0 +1,39 @@
+LDAPUserManager - Groups: View, Add or Delete Groups
+
+    Description
+
+        This view shows the groups exposed by your LDAP server for 
+        authentication purposes. You can add new groups or delete
+        existing records.
+
+    Controls
+        
+        'Delete' -- By checking one or more checkboxes next to group
+         records and then hitting Delete you can remove group records 
+         from LDAP. You will be presented with a confirmation screen
+         which will drop you back into the Groups view when you
+         hit "OK".
+
+        'Add Group' -- In order to add a new group you only need to
+         provide a group name and type. This name shuld be a "friendly" 
+         name, meaning it must not have any LDAP prefixes like "cn=".
+         Once you hit "Add" you will see the new group in the listing
+         or an error message above the listing.
+
+        'Delete LDAP Group Mapping' -- The mappings shown on the form
+         determine whether members in a LDAP groups are automatically 
+         receiving an additional Zope role by virtue of their LDAP
+         group membership. The Delete form can be used to remove such
+         a mapping by simply selecting the desired mapping and hitting
+         the "Delete" button.
+
+        'Add LDAP group to Zope role mapping' -- The mappings shown on 
+         the form determine whether members in a LDAP groups are
+         automatically receiving an additional Zope role by virtue of
+         their LDAP group membership. This add form can be used to add
+         such a mapping. Select the desired LDAP group name and the 
+         Zope role name that members of this group are supposed to have
+         and hit "Add".
+         This form will only show Zope roles that already exist on the 
+         Security tab, minus "Authenticated", "Owner" and "Anonymous".
+        

@@ -1,0 +1,32 @@
+LDAPUserSatellite - Log: View log information
+
+    Description
+
+        This screen shows the log kept by the LDAPUserSatellite. A basic 
+        log entry has the following elements:
+
+        o The log level that produced this entry
+
+        o The entry timestamp
+
+        o The log message
+
+        You can specify what kinds of events get logged using the 
+        "Log verbosity" setting found on the *Configure* tab. The 
+        different log levels are:
+
+        o 0: No logging entries will be made
+
+        o 1: Catastrophes, like failures to connect to the LDAP server
+
+        o 2: Major Events, like LDAPUserSatellite property changes
+
+        o 3: Minor Events, like initialization after Zope is restarted
+
+        o 4: Authentication failures
+
+        o 5: Successful authentications
+
+        o 7: Authentication from cache
+
+        o 9: Debugging, includes extra debugging info

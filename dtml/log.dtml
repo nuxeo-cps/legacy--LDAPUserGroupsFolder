@@ -1,0 +1,83 @@
+<dtml-var manage_page_header>
+
+<dtml-with "_(management_view='Log')">
+  <dtml-var manage_tabs>
+</dtml-with>
+
+<p class="form-help">
+These events were logged by the LDAP User Folder. 
+To specify what is logged you can adjust the log level. 
+At present, the log level is &dtml-verbose;.
+</p>
+
+<form action="manage_changeProperty" method="POST">
+
+  <input type="hidden" name="prop_name" value="verbose">
+  <input type="hidden" name="client_form" value="manage_log">
+
+  <table cellspacing="0" cellpadding="2" width="98%">
+    <tr class="section-bar">
+      <td align="left" valign="top" colspan="3"><div class="form-label">
+        Log verbosity
+      </div></td>
+    </tr>
+    
+    <tr>
+      <td align="left" valign="top"><div class="form-text">
+        Set the types of events being logged.
+      </div></td>
+      <td align="LEFT" valign="TOP">
+        <select name="prop_value:int">
+          <option value="0" <dtml-if "verbose==0">selected</dtml-if>>
+            No logging (0)
+          </option>
+          <option value="1" <dtml-if "verbose==1">selected</dtml-if>>
+            Catastrophes (1)
+          </option>
+          <option value="2" <dtml-if "verbose==2">selected</dtml-if>>
+            Major Events (2)
+          </option>
+          <option value="3" <dtml-if "verbose==3">selected</dtml-if>>
+            Minor Events (3)
+          </option>
+          <option value="4" <dtml-if "verbose==4">selected</dtml-if>>
+            Login Failures (4)
+          </option>
+          <option value="5" <dtml-if "verbose==5">selected</dtml-if>>
+            Login Successes (5)
+          </option>
+          <option value="7" <dtml-if "verbose==7">selected</dtml-if>>
+            Login From Cache (7)
+          </option>
+          <option value="9" <dtml-if "verbose==9">selected</dtml-if>>
+            Debugging (9)
+          </option>
+        </select>
+      </td>
+      <td align="left" valign="top"><div class="form-element">
+        <input class="form-element" type="SUBMIT" 
+               value=" Change " />
+      </div></td>
+    </tr>
+  </table>
+</form>
+
+<table cellspacing="0" cellpadding="2" width="98%">
+ <tr class="section-bar">
+   <td align="left" valign="top" colspan="3"><div class="form-label">
+     Log contents
+   </div></td>
+ </tr>
+</table>
+
+<p class="form-text">
+<dtml-in getLog reverse>
+   <dtml-var name="sequence-item"><br>
+
+<dtml-else>
+   Nothing was logged at this log level!
+
+</dtml-in>
+</p>
+
+<dtml-var manage_page_footer>

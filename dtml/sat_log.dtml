@@ -1,0 +1,31 @@
+<dtml-var manage_page_header>
+
+<dtml-with "_(management_view='Log')">
+  <dtml-var manage_tabs>
+</dtml-with>
+
+<p class="form-help">
+  These events were logged by the LDAP User Satellite.
+  To specify what is logged you can adjust the log level. 
+  At present, the log level is &dtml-verbose;.
+</p>
+
+<table cellspacing="0" cellpadding="2" width="98%">
+ <tr class="section-bar">
+   <td align="left" valign="top" colspan="3"><div class="form-label">
+     Log contents
+   </div></td>
+ </tr>
+</table>
+
+<p class="form-text">
+<dtml-in getLog reverse>
+   <dtml-var name="sequence-item"><br>
+
+<dtml-else>
+   Nothing was logged at this log level!
+
+</dtml-in>
+</p>
+
+<dtml-var manage_page_footer>

@@ -1,0 +1,60 @@
+CHANGES.txt for the LDAPUserFolder
+
+  This file contains change information for the LDAPUserFolder product.
+  To see changes made to revisions prior to the latest version see
+  HISTORY.txt.
+
+    2.3beta2
+
+      Bugs fixed:
+
+        * Cut down on the number of LDAP lookups in cases where the
+          user lookup happens "anonymously", meaning not as part of a 
+          normal authenticated request but from the Zope security
+          machinery for things like ownership-related security checks.
+          Thanks to Kyler Laird for bringing this one up.
+
+      Features added:
+
+        * All user lookups are now limited to those object classed 
+          defined in the "User object classes" configuration setting
+          on the "Configure" tab. Previously the lookup policy was
+          much more lenient and accepted every record where the login
+          matched - now the object classes have to match as well.
+
+          ***WARNING - THIS MIGHT BREAK YOUR SITE IF YOU WERE SLOPPY
+          WITH THE OBJECT CLASSES SETTING AND USAGE!***
+
+          Due to the possible breakage I had been sitting on Tracker
+          issue 294, filed by Andy Dustman, for quite a while before
+          going with it. Thanks for keeping te pressure on - it is 
+          "the right thing" to do.
+
+       * The "Users" tab will now show a little more information on
+         the user record detail view by default, namely the DN and
+         the object classes.
+
+       * The unit tests have been changed to work with the latest
+         and greatest (Zope 2.7 and Python 2.3.2), which is now the
+         default platform used to test and develop this product.
+  
+
+    2.3beta1
+
+      Bugs fixed:
+
+        * Use of the distinguished name as login attribute was broken
+          in version 2.2 - thanks to Ralf Herold for the information
+          (JTracker issue 312)
+
+        * The API documentation for manage_addUser in the Zope Help
+          System was slightly off, thanks go to Eugene Prigorodov for
+          pointing that out (Issue 319).
+
+        * Cleaned up LDAP filter strings used by the product to have
+          surrounding parentheses.
+
+        * Enable correct handling of DN elements that contain bad
+          characters, such as backslash-escaped commas (Bug report 
+          by Stephen Kirby)
+

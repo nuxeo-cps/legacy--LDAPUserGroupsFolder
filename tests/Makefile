@@ -22,8 +22,8 @@ coverage: cover
 	SOFTWARE_HOME=$(SOFTWARE_HOME) \
 	PYTHONPATH=$(PYTHONPATH) \
 	$(PYTHON) coverage.py -x runalltests.py
-	$(PYTHON) coverage.py -r ../*.py ../boxes/*.py
-	$(PYTHON) coverage.py -a -d cover ../*.py ../boxes/*.py
+	$(PYTHON) coverage.py -r ../*.py
+	$(PYTHON) coverage.py -a -d cover ../*.py
 	echo "Annotated files saved in cover/*.py,cover"
 
 clean:

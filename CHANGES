@@ -5,6 +5,7 @@ ZODB Requires:
 New features:
 ~~~~~~~~~~~~~
 - Now based on LDAPUserFolder 2.3.
+- Implemented subgroups support when groups are stored in the ZODB.
 
 Bug fixes:
 ~~~~~~~~~~

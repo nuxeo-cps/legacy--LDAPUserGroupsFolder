@@ -181,6 +181,7 @@ class LDAPUserFolder(BasicUserFolder):
         # Local DN to role/usergroup tree for storing roles
         self._groups_store = OOBTree()
         self._usergroups_store = OOBTree()
+        self._subgroups_store = OOBTree()
         # List of additionally known roles/usergroups
         self._additional_groups = []
         self._additional_usergroups = []
@@ -393,6 +394,11 @@ class LDAPUserFolder(BasicUserFolder):
                    , encryption='SHA', read_only=0, REQUEST=None
                    ):
         """ Edit the LDAPUserFolder Object """
+
+        # Maybe upgrade.
+        if not hasattr(aq_base(self), '_subgroups_store'):
+            self._subgroups_store = OOBTree()
+
         if not binduid:
             binduid_usage = 0
 
@@ -594,10 +600,26 @@ class LDAPUserFolder(BasicUserFolder):
         if self._login_attr != 'dn':
             login_name = login_name[0]
 
+        # Find all the groups the user belongs to.
+        groups_done = {'role:Anonymous': None}
+        if login_name != 'Anonymous User':
+            groups_done['role:Authenticated'] = None
+        # Recursively expand groups if they have subgroups.
+        groups_todo = list(user_groups or ())
+        while groups_todo:
+            g = groups_todo.pop(0)
+            if groups_done.has_key(g):
+                continue
+            groups_done[g] = None
+            groups_todo.extend(self._getGroupSubgroups(g))
+        # Final result is the computed groups.
+        computed_groups = groups_done.keys()
+
         user_obj = LDAPUser( login_name
                            , pwd or 'undef'
                            , user_roles or []
                            , user_groups or []
+                           , computed_groups
                            , []
                            , user_dn
                            , user_attrs
@@ -1513,10 +1535,36 @@ class LDAPUserFolder(BasicUserFolder):
                 users[user_id] = None
         users = users.keys()
 
-        subgroups = ()
+        subgroups = self._getGroupSubgroups(groupname)
 
         return CPSGroup(groupname, users, subgroups).__of__(self)
 
+    security.declarePrivate('_getGroupSubgroups')
+    def _getGroupSubgroups(self, groupname):
+        """Get the subgroups of a group."""
+        if self._local_usergroups:
+            subgroups = self._subgroups_store.get(groupname) or []
+        else:
+            # XXX not implemented for ldap storage yet.
+            subgroups = ()
+        return subgroups
+
+    security.declarePrivate('_setGroupSubgroups')
+    def _setGroupSubgroups(self, groupname, subgroups):
+        """Set the subgroups of a group."""
+        if self._local_usergroups:
+            store = self._subgroups_store
+            if subgroups:
+                store[groupname] = tuple(subgroups)
+            elif store.has_key(groupname):
+                del store[groupname]
+        else:
+            raise NotImplementedError("Cannot set subgroups for LDAP")
+
+    security.declarePublic('test_getAllowedRolesAndUsers') # XXXXXXXX debug
+    def test_getAllowedRolesAndUsers(self):
+        user = getSecurityManager().getUser()
+        return self.portal_catalog._listAllowedRolesAndUsers(user)
 
     security.declareProtected(manage_users, 'userFolderAddRole')
     def userFolderAddRole(self, role):
@@ -1661,13 +1709,16 @@ class LDAPUserFolder(BasicUserFolder):
         result.append('Anonymous')
         result.append('user:%s' % user.getUserName())
         # deal with groups
-        getGroups = getattr(user, 'getGroups', None)
-        if getGroups is not None:
+        if hasattr(aq_base(user), 'getComputedGroups'):
+            groups = user.getComputedGroups()
+        elif hasattr(aq_base(user), 'getGroups'):
             groups = user.getGroups() + ('role:Anonymous',)
             if 'Authenticated' in result:
                 groups = groups + ('role:Authenticated',)
-            for group in groups:
-                result.append('group:%s' % group)
+        else:
+            groups = ('role:Anonymous',)
+        for group in groups:
+            result.append('group:%s' % group)
         # end groups
         return result
 

@@ -15,6 +15,7 @@ from types import StringType, UnicodeType
 # Zope imports
 from Acquisition import aq_inner, aq_parent
 from AccessControl.User import BasicUser
+from AccessControl.PermissionRole import _what_not_even_god_should_do
 from AccessControl.Permissions import access_contents_information, manage_users
 from DateTime import DateTime
 from AccessControl import ClassSecurityInfo
@@ -35,6 +36,7 @@ class LDAPUser(BasicUser):
                 , password
                 , roles
                 , usergroups
+                , computedgroups
                 , domains
                 , user_dn
                 , user_attrs
@@ -48,6 +50,7 @@ class LDAPUser(BasicUser):
         self._dn = _verifyUnicode(user_dn)
         self.roles = roles
         self.usergroups = tuple(usergroups)
+        self.computedgroups = tuple(computedgroups)
         self.domains = []
         self.RID = '' 
         self.groups = ''
@@ -98,6 +101,16 @@ class LDAPUser(BasicUser):
         return self.usergroups
 
 
+    security.declarePublic('getComputedGroups')
+    def getComputedGroups(self):
+        """Get all the user's groups.
+
+        This includes groups of groups, and special groups
+        like role:Anonymous and role:Authenticated.
+        """
+        return self.computedgroups
+
+
     security.declarePublic('getRoles')
     def getRoles(self):
         """ Return the user's roles """
@@ -118,11 +131,54 @@ class LDAPUser(BasicUser):
     # computation with the LDAPUserSatellite
     #######################################################
 
+    # Basic version, derived from NuxUserGroups.
+    def _getRolesInContext(self, object):
+        """Return the list of roles assigned to the user,
+           including local roles assigned in context of
+           the passed in object."""
+        name = self.getUserName()
+        roles = self.getRoles()
+        # deal with groups
+        groups = self.getComputedGroups()
+        # end groups
+        local = {}
+        object = getattr(object, 'aq_inner', object)
+        while 1:
+            local_roles = getattr(object, '__ac_local_roles__', None)
+            if local_roles:
+                if callable(local_roles):
+                    local_roles = local_roles()
+                dict = local_roles or {}
+                for r in dict.get(name, []):
+                    local[r] = 1
+            # deal with groups
+            local_group_roles = getattr(object, '__ac_local_group_roles__', None)
+            if local_group_roles:
+                if callable(local_group_roles):
+                    local_group_roles = local_group_roles()
+                dict = local_group_roles or {}
+                for g in groups:
+                    for r in dict.get(g, []):
+                        local[r] = 1
+            # end groups
+            inner = getattr(object, 'aq_inner', object)
+            parent = getattr(inner, 'aq_parent', None)
+            if parent is not None:
+                object = parent
+                continue
+            if hasattr(object, 'im_self'):
+                object = object.im_self
+                object = getattr(object, 'aq_inner', object)
+                continue
+            break
+        roles = list(roles) + local.keys()
+        return roles
+
     def getRolesInContext(self, object):
         """Return the list of roles assigned to the user,
            including local roles assigned in context of
            the passed in object."""
-        roles = BasicUser.getRolesInContext(self, object)
+        roles = self._getRolesInContext(object)
 
         acl_satellite = self._getSatellite(object)
         if acl_satellite and hasattr(acl_satellite, 'getAdditionalRoles'):
@@ -132,9 +188,93 @@ class LDAPUser(BasicUser):
         return roles
 
 
+    # Basic version, derived from NuxUserGroups
+    def _allowed(self, object, object_roles=None):
+        """Check whether the user has access to object. The user must
+           have one of the roles in object_roles to allow access."""
+
+        if object_roles is _what_not_even_god_should_do:
+            return 0
+
+        # Short-circuit the common case of anonymous access.
+        if object_roles is None or 'Anonymous' in object_roles:
+            return 1
+
+        # Provide short-cut access if object is protected by 'Authenticated'
+        # role and user is not nobody
+        if 'Authenticated' in object_roles and (
+            self.getUserName() != 'Anonymous User'):
+            return 1
+
+        # Check for ancient role data up front, convert if found.
+        # This should almost never happen, and should probably be
+        # deprecated at some point.
+        if 'Shared' in object_roles:
+            object_roles = self._shared_roles(object)
+            if object_roles is None or 'Anonymous' in object_roles:
+                return 1
+
+        # Check for a role match with the normal roles given to
+        # the user, then with local roles only if necessary. We
+        # want to avoid as much overhead as possible.
+        user_roles = self.getRoles()
+        for role in object_roles:
+            if role in user_roles:
+                if self._check_context(object):
+                    return 1
+                return None
+
+        # Still have not found a match, so check local roles. We do
+        # this manually rather than call getRolesInContext so that
+        # we can incur only the overhead required to find a match.
+        inner_obj = getattr(object, 'aq_inner', object)
+        user_name = self.getUserName()
+        # deal with groups
+        groups = self.getComputedGroups()
+        # end groups
+        while 1:
+            local_roles = getattr(inner_obj, '__ac_local_roles__', None)
+            if local_roles:
+                if callable(local_roles):
+                    local_roles = local_roles()
+                dict = local_roles or {}
+                local_roles = dict.get(user_name, [])
+                for role in object_roles:
+                    if role in local_roles:
+                        if self._check_context(object):
+                            return 1
+                        return 0
+            # deal with groups
+            local_group_roles = getattr(inner_obj, '__ac_local_group_roles__', None)
+            if local_group_roles:
+                if callable(local_group_roles):
+                    local_group_roles = local_group_roles()
+                dict = local_group_roles or {}
+                for g in groups:
+                    local_group_roles = dict.get(g, [])
+                    if local_group_roles:
+                        for role in object_roles:
+                            if role in local_group_roles:
+                                if self._check_context(object):
+                                    return 1
+                                return 0
+            # end groups
+            inner = getattr(inner_obj, 'aq_inner', inner_obj)
+            parent = getattr(inner, 'aq_parent', None)
+            if parent is not None:
+                inner_obj = parent
+                continue
+            if hasattr(inner_obj, 'im_self'):
+                inner_obj = inner_obj.im_self
+                inner_obj = getattr(inner_obj, 'aq_inner', inner_obj)
+                continue
+            break
+        return None
+
+
     def allowed(self, object, object_roles=None):
         """ Must override, getRolesInContext is not always called """
-        if BasicUser.allowed(self, object, object_roles):
+        if self._allowed(object, object_roles):
             return 1
 
         acl_satellite = self._getSatellite(object)
@@ -269,6 +409,12 @@ class CPSGroup(SimpleItem):
     def getGroups(self):
         """Get group subgroups ids."""
         return self.groups
+
+    security.declareProtected(manage_users, 'setGroups')
+    def setGroups(self, groups):
+        """Set group subgroups ids."""
+        aclu = aq_parent(aq_inner(self))
+        aclu._setGroupSubgroups(self.id, groups)
 
     security.declareProtected(manage_users, 'getTitle')
     def getTitle(self):

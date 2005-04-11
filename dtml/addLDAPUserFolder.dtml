@@ -19,7 +19,8 @@
         Title
       </div></td>
       <td align="LEFT" valign="TOP" colspan="3">
-        <input type="TEXT" name="title" size="40" />
+        <input type="TEXT" name="title" size="40"
+         value="LDAP User Groups Folder"/>
       </td>
     </tr>
   
@@ -46,7 +47,7 @@
       <td align="LEFT" valign="TOP" colspan="3">
         <select name="login_attr">
           <option value="cn">Canonical Name (cn)</option>
-          <option value="uid">UID (uid)</option>
+          <option value="uid" selected="selected">UID (uid)</option>
           <option value="sn">Surname (sn)</option>
           <option value="dn">Distinguished Name (dn)</option>
         </select>
@@ -60,7 +61,7 @@
       <td align="LEFT" valign="TOP" colspan="3">
         <select name="rdn_attr">
           <option value="cn">Canonical Name (cn)</option>
-          <option value="uid">UID (uid)</option>
+          <option value="uid" selected="selected">UID (uid)</option>
         </select>
       </td>
     </tr>
@@ -71,7 +72,7 @@
       </div></td>
       <td align="LEFT" valign="TOP">
         <input type="TEXT" name="users_base" size="40"
-               value="ou=people,o=Organization,c=US" />
+               value="ou=people,dc=mystructure,dc=org" />
       </td>
       <td align="LEFT" valign="TOP"><div class="form-label">
         Scope
@@ -107,7 +108,7 @@
       </div></td>
       <td align="LEFT" valign="TOP">
         <input type="TEXT" name="groups_base" size="40" 
-               value="ou=roles,o=Organization,c=US" />
+               value="ou=role,dc=mystructure,dc=org" />
       </td>
       <td align="LEFT" valign="TOP"><div class="form-label">
         Scope
@@ -142,7 +143,7 @@
       </div></td>
       <td align="LEFT" valign="TOP">
         <input type="TEXT" name="usergroups_base" size="40" 
-               value="ou=groups,o=Organization,c=US" />
+               value="ou=group,dc=mystructure,dc=org" />
       </td>
       <td align="LEFT" valign="TOP"><div class="form-label">
         Scope

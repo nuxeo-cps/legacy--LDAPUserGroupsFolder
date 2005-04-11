@@ -1,4 +1,24 @@
 *******************************************
+** LDAPUserGroupsFolder V2.9.0 [R1 build 2005/04/11-08:30 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Added the fields "uid" and "mail" to the default LDAP schema, since everybody
+  always needs it.
+Bug fixes:
+~~~~~~~~~~
+- Fixed manage_editUser that was not modifying mapped attributes. One effect of
+  that bug what that it was impossible to modify the email address of a user
+  since the CPSDirectory uses the "email" attribute and the LDAP inetOrgPerson
+  objectclass uses the "mail" attribute.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** LDAPUserGroupsFolder V2.8.1 [R1 build 2004/12/17-14:30 by astefanescu]
 
 Requires:

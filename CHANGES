@@ -4,8 +4,8 @@ Requires:
 New features:
 ~~~~~~~~~~~~~
 - Added more sensible default configuration to the LDAPUserGroupsFolder (the
-  "givenName" attribute in the schema + prefilled values in the HTML creation
-  form).
+  "givenName" and the "fullname" attributes in the schema + prefilled values in
+  the HTML creation form).
 Bug fixes:
 ~~~~~~~~~~
 - Fixed the fact that a mapped attribute couldn't be modified with its original

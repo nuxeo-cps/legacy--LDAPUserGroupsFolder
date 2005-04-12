@@ -171,7 +171,7 @@ class LDAPUserFolder(BasicUserFolder):
         self._ldapschema = {'cn': {'ldap_name' : 'cn',
                                    'friendly_name' : 'Canonical Name',
                                    'multivalued' : '',
-                                   'public_name' : '',
+                                   'public_name' : 'fullname',
                                    },
                             'sn': {'ldap_name' : 'sn',
                                    'friendly_name' : 'Last Name',

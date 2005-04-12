@@ -1,4 +1,21 @@
 *******************************************
+** LDAPUserGroupsFolder V2.9.2 [R1 build 2005/04/12-10:31 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Added more sensible default configuration to the LDAPUserGroupsFolder (using
+  'top,person,organizationalPerson,inetOrgPerson' instead of 'top,person').
+Bug fixes:
+~~~~~~~~~~
+-
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** LDAPUserGroupsFolder V2.9.1 [R1 build 2005/04/12-09:13 by madarche]
 
 Requires:

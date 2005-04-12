@@ -3,8 +3,7 @@ Requires:
 -
 New features:
 ~~~~~~~~~~~~~
-- Added more sensible default configuration to the LDAPUserGroupsFolder (using
-  'top,person,organizationalPerson,inetOrgPerson' instead of 'top,person').
+-
 Bug fixes:
 ~~~~~~~~~~
 -

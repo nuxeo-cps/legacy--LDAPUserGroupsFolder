@@ -232,15 +232,13 @@ class LDAPUserFolder(BasicUserFolder):
                                 , use_ssl
                                 )
 
-        self.manage_edit( title, login_attr, users_base, users_scope
-                        , roles, groups_base, groups_scope
-                        , usergroups_base, usergroups_scope
-                        , binduid
-                        , bindpwd, binduid_usage, rdn_attr, 'top,person'
-                        , local_groups
-                        , local_usergroups
-                        , encryption, read_only
-                        )
+        self.manage_edit(title, login_attr, users_base, users_scope,
+                         roles, groups_base, groups_scope,
+                         usergroups_base, usergroups_scope,
+                         binduid, bindpwd, binduid_usage, rdn_attr,
+                         'top,person,organizationalPerson,inetOrgPerson',
+                         local_groups, local_usergroups, encryption, read_only,
+                         )
 
 
     security.declarePrivate('_clearCaches')
@@ -402,13 +400,13 @@ class LDAPUserFolder(BasicUserFolder):
 
 
     security.declareProtected(EDIT_PERMISSION, 'manage_edit')
-    def manage_edit( self, title, login_attr, users_base
-                   , users_scope, roles,  groups_base, groups_scope
-                   , usergroups_base, usergroups_scope
-                   , binduid, bindpwd, binduid_usage=1, rdn_attr='cn'
-                   , obj_classes='top,person', local_groups=0
-                   , local_usergroups=0
-                   , encryption='SHA', read_only=0, REQUEST=None
+    def manage_edit(self, title, login_attr, users_base,
+                    users_scope, roles,  groups_base, groups_scope,
+                    usergroups_base, usergroups_scope,
+                    binduid, bindpwd, binduid_usage=1, rdn_attr='cn',
+                    obj_classes='top,person,organizationalPerson,inetOrgPerson',
+                    local_groups=0, local_usergroups=0,
+                    encryption='SHA', read_only=0, REQUEST=None,
                    ):
         """ Edit the LDAPUserFolder Object """
 

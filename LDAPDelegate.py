@@ -59,10 +59,10 @@ class LDAPDelegate(Persistent):
                 ):
         """ Create a new LDAPDelegate instance """
         self._servers = []
-        self.edit( login_attr, users_base, rdn_attr
-                 , 'top,person', bind_dn, bind_pwd
-                 , 1, read_only
-                 )
+        self.edit(login_attr, users_base, rdn_attr,
+                  'top,person,organizationalPerson,inetOrgPerson',
+                  bind_dn, bind_pwd, 1, read_only,
+                  )
 
         if server != '':
             if server.find(':') != -1:

@@ -2514,14 +2514,16 @@ class LDAPUserFolder(BasicUserFolder):
         else:
             source = REQUEST
 
+        #LOG('manage_editUser', DEBUG, "source = %s" % source)
         for attr, struct in self.getSchemaConfig().items():
+            #LOG('manage_editUser', DEBUG, "attr, struct = %s / %s" % (attr, struct))
             attr_key = None
-            if struct.has_key('public_name'):
-                mapped_to = struct['public_name']
-                if mapped_to != '':
-                    attr_key = mapped_to
-            if attr_key is None and source.has_key(attr):
+            if source.has_key(attr):
                 attr_key = attr
+            if attr_key is None and struct.has_key('public_name'):
+                mapped_to = struct['public_name']
+                if mapped_to != '' and source.has_key(mapped_to):
+                    attr_key = mapped_to
             if attr_key is not None:
                 new = source.get(attr_key, '')
                 if isinstance(new, StringType):
@@ -2530,6 +2532,7 @@ class LDAPUserFolder(BasicUserFolder):
                     new = [str(new)]
                 new_attrs[attr] = new
 
+        #LOG('manage_editUser', DEBUG, "new_attrs = %s" % new_attrs)
         if new_attrs:
             msg = self._delegate.modify(user_dn, attrs=new_attrs)
         else:

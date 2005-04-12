@@ -11,6 +11,7 @@ __version__='$Revision$'[11:-2]
 # General python imports
 import sys, ldap
 from types import DictType, StringType
+from zLOG import LOG, DEBUG, ERROR
 
 # Zope imports
 from Persistence import Persistent

@@ -8,7 +8,9 @@ New features:
   form).
 Bug fixes:
 ~~~~~~~~~~
--
+- Fixed the fact that a mapped attribute couldn't be modified with its original
+  unmapped key. This bug was introduced with the precedent fix in the same
+  manage_editUser method.
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

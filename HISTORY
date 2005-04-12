@@ -1,4 +1,24 @@
 *******************************************
+** LDAPUserGroupsFolder V2.9.1 [R1 build 2005/04/12-09:13 by madarche]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+- Added more sensible default configuration to the LDAPUserGroupsFolder (the
+  "givenName" and the "fullname" attributes in the schema + prefilled values in
+  the HTML creation form).
+Bug fixes:
+~~~~~~~~~~
+- Fixed the fact that a mapped attribute couldn't be modified with its original
+  unmapped key. This bug was introduced with the precedent fix in the same
+  manage_editUser method.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** LDAPUserGroupsFolder V2.9.0 [R1 build 2005/04/11-08:30 by ben]
 
 Requires:

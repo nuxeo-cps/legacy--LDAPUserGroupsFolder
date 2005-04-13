@@ -130,7 +130,8 @@ class TestLDAPUserFolder(unittest.TestCase):
         ae(ld.bind_pwd, dg('bindpwd'))
         ae(ld.binduid_usage, dg('binduid_usage'))
         ae(ld.u_base, dg('users_base'))
-        ae(ld.u_classes, ['top', 'person'])
+        ae(ld.u_classes, ['top', 'person', 
+                          'organizationalPerson', 'inetOrgPerson'])
         ae(ld.read_only, not not dg('read_only'))
 
     def testLUFEdit(self):
@@ -234,17 +235,17 @@ class TestLDAPUserFolder(unittest.TestCase):
     def testSchemaMappedAttrs(self):
         acl = self.folder.acl_users
         ae = self.assertEqual
-        ae(len(acl.getMappedUserAttrs()), 1)
+        ae(len(acl.getMappedUserAttrs()), 2)
         acl.manage_addLDAPSchemaItem( 'jpegPhoto'
                                     , 'Photo'
                                     , 'photo'
                                     , 'public'
                                     )
-        ae(len(acl.getMappedUserAttrs()), 2)
+        ae(len(acl.getMappedUserAttrs()), 3)
         ae(acl.getMappedUserAttrs(),
-           (('mail', 'email'), ('jpegPhoto', 'public')))
+           (('cn', 'fullname'), ('mail', 'email'), ('jpegPhoto', 'public')))
         acl.manage_deleteLDAPSchemaItems(['jpegPhoto'])
-        ae(len(acl.getMappedUserAttrs()), 1)
+        ae(len(acl.getMappedUserAttrs()), 2)
 
     def testSchemaMultivaluedAttrs(self):
         acl = self.folder.acl_users

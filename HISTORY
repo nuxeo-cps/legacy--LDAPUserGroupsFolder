@@ -1,4 +1,20 @@
 *******************************************
+** LDAPUserGroupsFolder V2.9.3 [R1 build 2005/04/14-09:23 by ben]
+
+Requires:
+~~~~~~~~~
+-
+New features:
+~~~~~~~~~~~~~
+-
+Bug fixes:
+~~~~~~~~~~
+- Updated unit tests so that they reflect the new default values of the product.
+New internal features:
+~~~~~~~~~~~~~~~~~~~~~~
+-
+
+*******************************************
 ** LDAPUserGroupsFolder V2.9.2 [R1 build 2005/04/12-10:31 by madarche]
 
 Requires:

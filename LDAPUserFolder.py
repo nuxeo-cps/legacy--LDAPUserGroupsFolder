@@ -1978,8 +1978,13 @@ class LDAPUserFolder(BasicUserFolder):
 
     def _doAddUser(self, name, password, roles, domains, **kw):
         kw[self._login_attr] = name
+        default = kw.get('fullname', '').strip() or name
         if not kw.has_key(self._rdnattr):
-            kw[self._rdnattr] = kw.get('fullname', name)
+            kw[self._rdnattr] = default
+        if not kw.has_key('sn'):
+            kw['sn'] = default
+        if not kw.has_key('cn'):
+            kw['cn'] = default
         kw['user_pw'] = password
         kw['confirm_pw'] = password
         kw['user_roles'] = roles

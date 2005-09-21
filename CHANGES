@@ -6,7 +6,7 @@ New features:
 -
 Bug fixes:
 ~~~~~~~~~~
-- #891: Don't fail to create entries if the LDAP schema has strong constraints.
+-
 New internal features:
 ~~~~~~~~~~~~~~~~~~~~~~
 -

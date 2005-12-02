@@ -197,6 +197,8 @@ def constructLDAPUserGroupsFolder(container):
         """
         return True
     old_connect = LDAPDelegate.connect
+    # XXX there should be thread locking during this monkey patch
+    # (however installs are usually not done with other threads running)
     LDAPDelegate.connect = connect
     try:
         manage_addLDAPUserGroupsFolder(

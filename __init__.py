@@ -37,6 +37,3 @@ def initialize(context):
                          )
 
     context.registerHelp()
-
-    # CMFSetup registration
-    import setup

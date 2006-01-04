@@ -24,8 +24,8 @@ from cgi import escape
 from Products.LDAPUserGroupsFolder.LDAPUserFolder import LDAPUserFolder
 from Products.LDAPUserGroupsFolder.LDAPUserFolder import \
      manage_addLDAPUserGroupsFolder
-from Products.CPSUserFolder.setup.handlers import registerExportImport
-from Products.CPSUserFolder.setup.handlers import registerImportMapping
+#from Products.CPSUserFolder.setup.handlers import registerExportImport
+#from Products.CPSUserFolder.setup.handlers import registerImportMapping
 from Products.CMFSetup.utils import CONVERTER, DEFAULT, KEY
 
 
@@ -211,6 +211,7 @@ def constructLDAPUserGroupsFolder(container):
     finally:
         LDAPDelegate.connect = old_connect
 
+"""
 registerExportImport(LDAPUserFolder.meta_type, exportLDAPUGF,
                      constructLDAPUserGroupsFolder, importLDAPUGF)
 
@@ -229,3 +230,4 @@ registerImportMapping({
         'url': {},
         },
     })
+"""

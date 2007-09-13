@@ -1,4 +1,25 @@
 ===========================================================
+Package: LDAPUserGroupsFolder 2.12.0
+===========================================================
+First release built by: ben at: 2007-09-13T23:10:43
+SVN Tag: http://svn.nuxeo.org/pub/CPS3/legacy/LDAPUserGroupsFolder/tags/2.12.0
+Build from: http://svn.nuxeo.org/pub/CPS3/legacy/LDAPUserGroupsFolder/trunk@51972
+
+Requires
+~~~~~~~~
+- WARNING this is an experimental version
+New features
+~~~~~~~~~~~~
+- Backport the LDAPDelegate.py from LDAPUserFolder 2.8, to have reconnect and
+  timeouts options.
+Bug fixes
+~~~~~~~~~
+-
+New internal features
+~~~~~~~~~~~~~~~~~~~~~
+- 
+
+===========================================================
 Package: LDAPUserGroupsFolder 2.11.0
 ===========================================================
 First release built by: madarche at: 2006-12-04T15:53:05

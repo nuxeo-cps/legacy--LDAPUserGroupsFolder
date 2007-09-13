@@ -31,8 +31,7 @@ from zLOG import LOG, DEBUG, ERROR
 
 # LDAPUserFolder package imports
 from LDAPUser import LDAPUser, CPSGroup
-from LDAPDelegate import LDAPDelegate, explode_dn
-from LDAPDelegate import ADD, DELETE, REPLACE, BASE
+from LDAPDelegate import LDAPDelegate
 from SimpleLog import SimpleLog
 from SimpleCache import SimpleCache
 from utils import _createLDAPPassword, to_utf8, crypt
@@ -329,7 +328,7 @@ class LDAPUserFolder(BasicUserFolder):
                 self._log.log(9, msg)
 
             auth_res = self._delegate.search( base=utf8_dn
-                                            , scope=BASE
+                                            , scope=self._delegate.BASE
                                             , filter='(objectClass=*)'
                                             , attrs=known_attrs
                                             , bind_dn=user_dn
@@ -478,14 +477,20 @@ class LDAPUserFolder(BasicUserFolder):
 
 
     security.declareProtected(manage_users, 'manage_addServer')
-    def manage_addServer(self, host, port='389', use_ssl=0, REQUEST=None):
+    def manage_addServer( self
+                        , host
+                        , port='389'
+                        , use_ssl=0
+                        , conn_timeout=5
+                        , op_timeout=-1
+                        , REQUEST=None
+                        ):
         """ Add a new server to the list of servers in use """
-        self._delegate.addServer(host, port, use_ssl)
+        self._delegate.addServer(host, port, use_ssl, conn_timeout, op_timeout)
         msg = 'Server at %s:%s added' % (host, port)
 
         if REQUEST:
             return self.manage_main(manage_tabs_message=msg)
-
 
     security.declareProtected(manage_users, 'getServers')
     def getServers(self):
@@ -676,7 +681,7 @@ class LDAPUserFolder(BasicUserFolder):
     def getUserByDN(self, user_dn):
         """ Make a user object from a DN """
         res = self._delegate.search( base=user_dn
-                                   , scope=BASE
+                                   , scope=self._delegate.BASE
                                    , attrs=[self._login_attr]
                                    )
 
@@ -720,7 +725,7 @@ class LDAPUserFolder(BasicUserFolder):
         dn = to_utf8(urllib.unquote(encoded_dn))
 
         res = self._delegate.search( base=dn
-                                   , scope=BASE
+                                   , scope=self._delegate.BASE
                                    , attrs=attrs
                                    )
 
@@ -1005,7 +1010,7 @@ class LDAPUserFolder(BasicUserFolder):
                     try:
                         cn = res_dicts[i]['cn'][0]
                     except KeyError:    # NDS oddity
-                        cn = explode_dn(dn, 1)[0]
+                        cn = self._delegate.explode_dn(dn, 1)[0]
 
                     if attr is None:
                         group_list.append((cn, dn))
@@ -1083,7 +1088,7 @@ class LDAPUserFolder(BasicUserFolder):
                     try:
                         cn = res_dicts[i]['cn'][0]
                     except KeyError:    # NDS oddity
-                        cn = explode_dn(dn, 1)[0]
+                        cn = self._delegate.explode_dn(dn, 1)[0]
 
                     if attr is None:
                         usergroup_list.append((cn, dn))
@@ -1106,7 +1111,7 @@ class LDAPUserFolder(BasicUserFolder):
         else:
             group_type = 'n/a'
             res = self._delegate.search( base=group_dn
-                                       , scope=BASE
+                                       , scope=self._delegate.BASE
                                        , attrs=['objectClass']
                                        )
 
@@ -1142,7 +1147,7 @@ class LDAPUserFolder(BasicUserFolder):
         else:
             usergroup_type = 'n/a'
             res = self._delegate.search( base=usergroup_dn
-                                       , scope=BASE
+                                       , scope=self._delegate.BASE
                                        , attrs=['objectClass']
                                        )
 
@@ -1554,7 +1559,7 @@ class LDAPUserFolder(BasicUserFolder):
         else:
             # We have to lookup the user to get its login attribute.
             res = self._delegate.search(base=user_dn,
-                                        scope=BASE,
+                                        scope=self._delegate.BASE,
                                         attrs=[self._login_attr]
                                         )
             if res['exception'] or not res['size']:
@@ -2085,7 +2090,7 @@ class LDAPUserFolder(BasicUserFolder):
 
                         for role in user_roles:
                             try:
-                                exploded = explode_dn(role)
+                                exploded = self._delegate.explode_dn(role)
                                 elements = len(exploded)
                             except:
                                 elements = 1
@@ -2114,7 +2119,7 @@ class LDAPUserFolder(BasicUserFolder):
 
                         for usergroup in user_usergroups:
                             try:
-                                exploded = explode_dn(usergroup)
+                                exploded = self._delegate.explode_dn(usergroup)
                                 elements = len(exploded)
                             except:
                                 elements = 1
@@ -2257,7 +2262,7 @@ class LDAPUserFolder(BasicUserFolder):
                         member_type = GROUP_MEMBER_MAP.get(group_type)
 
                         msg = self._delegate.modify( dn=group
-                                                   , mod_type=DELETE
+                                                   , mod_type=self._delegate.DELETE
                                                    , attrs={member_type : [dn]}
                                                    )
 
@@ -2275,7 +2280,7 @@ class LDAPUserFolder(BasicUserFolder):
                         member_type = GROUP_MEMBER_MAP.get(usergroup_type)
 
                         msg = self._delegate.modify( dn=usergroup
-                                                   , mod_type=DELETE
+                                                   , mod_type=self._delegate.DELETE
                                                    , attrs={member_type : [dn]}
                                                    )
 
@@ -2368,12 +2373,12 @@ class LDAPUserFolder(BasicUserFolder):
 
                 if group in cur_groups and group not in group_dns:
                     msg = self._delegate.modify( group
-                                               , DELETE
+                                               , self._delegate.DELETE
                                                , {member_attr : [user_dn]}
                                                )
                 elif group in group_dns and group not in cur_groups:
                     msg = self._delegate.modify( group
-                                               , ADD
+                                               , self._delegate.ADD
                                                , {member_attr : [user_dn]}
                                                )
 
@@ -2442,12 +2447,12 @@ class LDAPUserFolder(BasicUserFolder):
 
                 if usergroup in cur_usergroups and usergroup not in group_dns:
                     msg = self._delegate.modify( usergroup
-                                               , DELETE
+                                               , self._delegate.DELETE
                                                , {member_attr : [user_dn]}
                                                )
                 elif usergroup in group_dns and usergroup not in cur_usergroups:
                     msg = self._delegate.modify( usergroup
-                                               , ADD
+                                               , self._delegate.ADD
                                                , {member_attr : [user_dn]}
                                                )
 
@@ -2472,7 +2477,7 @@ class LDAPUserFolder(BasicUserFolder):
             prop_value[i] = to_utf8(prop_value[i])
 
         cur_rec = self._delegate.search( base=user_dn
-                                       , scope=BASE
+                                       , scope=self._delegate.BASE
                                        )
 
         if cur_rec['exception'] or cur_rec['size'] == 0:
@@ -2487,9 +2492,9 @@ class LDAPUserFolder(BasicUserFolder):
 
         if cur_prop != prop_value:
             if prop_value != ['']:
-                mod = REPLACE
+                mod = self._delegate.REPLACE
             else:
-                mod = DELETE
+                mod = self._delegate.DELETE
 
             err_msg = self._delegate.modify( dn=user_dn
                                            , mod_type=mod
@@ -2561,7 +2566,7 @@ class LDAPUserFolder(BasicUserFolder):
 
         if new_cn and new_utf8_rdn != old_utf8_rdn:
             old_dn = utf8_dn
-            old_dn_exploded = explode_dn(old_dn)
+            old_dn_exploded = self._delegate.explode_dn(old_dn)
             old_dn_exploded[0] = new_rdn
             new_dn = ','.join(old_dn_exploded)
             old_groups = self.getGroups(dn=user_dn, attr='dn')
@@ -2578,11 +2583,11 @@ class LDAPUserFolder(BasicUserFolder):
                     member_type = GROUP_MEMBER_MAP.get(group_type)
 
                     msg = self._delegate.modify( group
-                                               , DELETE
+                                               , self._delegate.DELETE
                                                , {member_type : [user_dn]}
                                                )
                     msg = self._delegate.modify( group
-                                               , ADD
+                                               , self._delegate.ADD
                                                , {member_type : [new_dn]}
                                                )
 
@@ -2599,11 +2604,11 @@ class LDAPUserFolder(BasicUserFolder):
                     usergroup_type = self.getUserGroupType(usergroup)
                     member_type = GROUP_MEMBER_MAP.get(usergroup_type)
                     msg = self._delegate.modify( usergroup
-                                               , DELETE
+                                               , self._delegate.DELETE
                                                , {member_type : [user_dn]}
                                                )
                     msg = self._delegate.modify( usergroup
-                                               , ADD
+                                               , self._delegate.ADD
                                                , {member_type : [new_dn]}
                                                )
 

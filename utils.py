@@ -1,17 +1,23 @@
 ######################################################################
 #
-# utils     A collection of utility functions
+# utils     A collection of utility functions that do not depend on
+#           the python-ldap module.
 #
-# This software is governed by a license. See 
+# This software is governed by a license. See
 # LICENSE.txt for the terms of this license.
 #
 ######################################################################
 __version__='$Revision$'[11:-2]
 
-import urllib, sha, SSHA, random, base64, codecs, string
-from types import UnicodeType
-import re
-
+import base64
+import codecs
+import md5
+import random
+from sets import Set
+import sha
+import SSHA
+import string
+import ldap
 
 #################################################
 # "Safe" imports for use in the other modules
@@ -19,12 +25,8 @@ import re
 
 try:
     import crypt
-    HAVE_CRYPT = 1
 except ImportError:
     crypt = None
-    HAVE_CRYPT = 0
-
-import ldap
 
 #################################################
 # Constants used in other modules
@@ -32,15 +34,26 @@ import ldap
 
 HTTP_METHODS = ('GET', 'PUT', 'POST')
 
-ldap_scopes = (ldap.SCOPE_BASE, ldap.SCOPE_ONELEVEL, ldap.SCOPE_SUBTREE)
-
 GROUP_MEMBER_MAP = { 'groupOfUniqueNames' : 'uniqueMember'
                    , 'groupOfNames' : 'member'
                    , 'accessGroup' : 'member'
                    , 'group' : 'member'
                    }
 
+VALID_GROUP_ATTRIBUTES = Set(list(GROUP_MEMBER_MAP.values()) +
+                             [ 'name'
+                             , 'displayName'
+                             , 'cn'
+                             , 'dn'
+                             , 'objectGUID'
+                             , 'description'
+                             , 'mail'
+                             ]
+                            )
+
 encoding = 'latin1'
+
+ldap_scopes = (ldap.SCOPE_BASE, ldap.SCOPE_ONELEVEL, ldap.SCOPE_SUBTREE)
 
 
 #################################################
@@ -52,13 +65,13 @@ def _normalizeDN(dn):
 
 def _verifyUnicode(st):
     """ Verify that the string is unicode """
-    if isinstance(st, UnicodeType):
+    if isinstance(st, unicode):
         return st
     else:
         try:
             return unicode(st)
         except UnicodeError:
-            return unicode(st, encoding).encode(encoding)
+            return unicode(st, encoding)
 
 
 def _createLDAPPassword(password, encoding='SHA'):
@@ -73,12 +86,14 @@ def _createLDAPPassword(password, encoding='SHA'):
         for n in range(2):
             salt += random.choice(saltseeds)
         pwd_str = '{crypt}%s' % crypt.crypt(password, salt)
+    elif encoding == 'md5':
+        m = md5.new(password)
+        pwd_str = '{md5}' + base64.encodestring(m.digest())
     elif encoding == 'clear':
         pwd_str = password
     else:
         sha_obj = sha.new(password)
-        sha_dig = sha_obj.digest()
-        pwd_str = '{SHA}' + base64.encodestring(sha_dig)
+        pwd_str = '{SHA}' + base64.encodestring(sha_obj.digest())
 
     return pwd_str.strip()
 
@@ -97,16 +112,53 @@ try:
             return encodeLocal(decodeUTF8(s)[0])[0]
 
         def to_utf8(s):
-            return encodeUTF8(decodeLocal(s)[0])[0]
-
+            if isinstance(s, str):
+                s = decodeLocal(s)[0]
+            return encodeUTF8(s)[0]
 
 except LookupError:
     raise LookupError, 'Unknown encoding "%s"' % encoding
 
 
-#########################################################
-# Stuff no longer needed with python-ldap 2.0.0pre14
-#########################################################
+def guid2string(val):
+    """ convert an active directory binary objectGUID value as returned by
+    python-ldap into a string that can be used as an LDAP query value """
+    s = ['\\%02X' % ord(x) for x in val]
+    return ''.join(s)
+
+
+############################################################
+# LDAP delegate registry
+############################################################
+
+delegate_registry = {}
+
+def registerDelegate(name, klass, description=''):
+    """ Register delegates that handle the LDAP-related work
+
+    name is a short ID-like moniker for the delegate
+    klass is a reference to the delegate class itself
+    description is a more verbose delegate description
+    """
+    delegate_registry[name] = { 'name'        : name
+                              , 'klass'       : klass
+                              , 'description' : description
+                              }
+
+def registeredDelegates():
+    """ Return the currently-registered delegates """
+    return delegate_registry
+
+def _createDelegate(name='LDAP delegate'):
+    """ Create a delegate based on the name passed in """
+    default = delegate_registry.get('LDAP delegate')
+    info = delegate_registry.get(name, None) or default
+    klass = info['klass']
+    delegate = klass()
+
+    return delegate
+
+
 
 try:
     import ldap.filter
@@ -124,8 +176,8 @@ except ImportError:
       s = s.replace(r')', r'\29')
       s = s.replace('\x00', r'\00')
       return s
-    
-    
+
+
     def filter_format(filter_template,assertion_values):
       """
       filter_template

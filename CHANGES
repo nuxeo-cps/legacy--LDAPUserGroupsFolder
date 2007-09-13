@@ -1,9 +1,10 @@
 Requires
 ~~~~~~~~
--
+- WARNING this is an experimental version
 New features
 ~~~~~~~~~~~~
--
+- Backport the LDAPDelegate.py from LDAPUserFolder 2.8, to have reconnect and
+  timeouts options.
 Bug fixes
 ~~~~~~~~~
 -

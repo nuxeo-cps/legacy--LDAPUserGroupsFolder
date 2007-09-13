@@ -290,6 +290,17 @@
         </td>
         <td><div class="form-text"> &dtml-host; </div></td>
         <td><div class="form-text"> &dtml-port; </div></td>
+        <td class="form-text">
+          <dtml-var "(protocol == 'ldaps' and 'LDAP over SSL') or
+                     (protocol == 'ldapi' and 'LDAP over IPC') or 'LDAP'">
+        </td>
+        <td class="form-text">
+          Connection Timeout: <dtml-var conn_timeout missing="-1"> seconds
+        </td>
+        <td class="form-text">
+          Operation Timeout: <dtml-var op_timeout missing="-1"> seconds
+        </td>
+
         <td><div class="form-text">
           <dtml-var "protocol == 'ldaps' and 'LDAP over SSL' or 'LDAP'">
         </div></td>
@@ -353,7 +364,37 @@
         </select>
       </div></td>
     </tr>
-
+    <tr>
+      <td class="form-label">
+        Connection Timeout
+      </td>
+      <td class="form-element">
+        <select name="conn_timeout:int">
+          <option value="2"> 2 seconds </option>
+          <option value="5" selected> 5 seconds </option>
+          <option value="10"> 10 seconds </option>
+          <option value="30"> 30 seconds </option>
+          <option value="60"> 60 seconds </option>
+          <option value="-1"> No timeout </option>
+        </select>
+      </td>
+    </tr>
+    <tr>
+      <td class="form-label">
+        Operation Timeout
+      </td>
+      <td class="form-element">
+        <select name="op_timeout:int">
+          <option value="5"> 5 seconds </option>
+          <option value="10"> 10 seconds </option>
+          <option value="30"> 30 seconds </option>
+          <option value="60"> 60 seconds </option>
+          <option value="120"> 120 seconds </option>
+          <option value="300"> 300 seconds </option>
+          <option value="-1" selected> No timeout </option>
+        </select>
+      </td>
+    </tr>
     <tr>
       <td colspan="2">
         <input type="submit" name=" Add " value=" Add Server ">

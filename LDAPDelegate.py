@@ -9,41 +9,42 @@
 __version__='$Revision$'[11:-2]
 
 # General python imports
-import ldap
-from ldapurl import LDAPUrl
-from ldapurl import isLDAPUrl
-from ldap.dn import escape_dn_chars
-from ldap.filter import filter_format
-import logging
-import random
+import sys, ldap
+from types import DictType, StringType
+from zLOG import LOG, DEBUG, ERROR
 
 # Zope imports
 from Persistence import Persistent
 from AccessControl.SecurityManagement import getSecurityManager
 
-# LDAPUserGroupsFolder package imports
-from Products.LDAPUserGroupsFolder.LDAPUser import LDAPUser
-from Products.LDAPUserGroupsFolder.SharedResource import getResource
-from Products.LDAPUserGroupsFolder.SharedResource import setResource
-from Products.LDAPUserGroupsFolder.utils import from_utf8
-from Products.LDAPUserGroupsFolder.utils import registerDelegate
-from Products.LDAPUserGroupsFolder.utils import to_utf8
+# LDAPUserFolder package imports
+from utils import to_utf8, from_utf8
 
 try:
-    c_factory = ldap.ldapobject.ReconnectLDAPObject
-except AttributeError:
-    c_factory = ldap.ldapobject.SimpleLDAPObject
-logger = logging.getLogger('event.LDAPDelegate')
+    from ldapurl import LDAPUrl
+except ImportError:
+    LDAPUrl = None
 
+ADD = ldap.MOD_ADD
+DELETE = ldap.MOD_DELETE
+REPLACE = ldap.MOD_REPLACE
+BASE = ldap.SCOPE_BASE
+ONELEVEL = ldap.SCOPE_ONELEVEL
+SUBTREE = ldap.SCOPE_SUBTREE
+
+
+def explode_dn(dn, notypes=0):
+    """ Indirection to avoid need for importing ldap elsewhere """
+    return ldap.explode_dn(dn, notypes)
 
 
 class LDAPDelegate(Persistent):
-    """ LDAPDelegate
+    """ LDAPDelegate 
 
     This object handles all LDAP operations. All search operations will
     return a dictionary, where the keys are as follows:
 
-    exception   - Contains a string representing exception information
+    exception   - Contains a string representing exception information 
                   if an exception was raised during the operation.
 
     size        - An integer containing the length of the result set
@@ -52,18 +53,16 @@ class LDAPDelegate(Persistent):
 
     results     - Sequence of results
     """
-    _hash = None
 
     def __init__( self, server='', login_attr='', users_base='', rdn_attr=''
                 , use_ssl=0, bind_dn='', bind_pwd='', read_only=0
                 ):
         """ Create a new LDAPDelegate instance """
-        self._hash = 'ldap_delegate%s' % str(random.random())
         self._servers = []
-        self.edit( login_attr, users_base, rdn_attr
-                 , 'top,person', bind_dn, bind_pwd
-                 , 1, read_only
-                 )
+        self.edit(login_attr, users_base, rdn_attr,
+                  'top,person,organizationalPerson,inetOrgPerson',
+                  bind_dn, bind_pwd, 1, read_only,
+                  )
 
         if server != '':
             if server.find(':') != -1:
@@ -72,9 +71,7 @@ class LDAPDelegate(Persistent):
             else:
                 host = server
 
-                if use_ssl == 2:
-                    port = 0
-                elif use_ssl == 1:
+                if use_ssl:
                     port = 636
                 else:
                     port = 389
@@ -82,20 +79,11 @@ class LDAPDelegate(Persistent):
             self.addServer(host, port, use_ssl)
 
 
-    def addServer( self
-                 , host
-                 , port='389'
-                 , use_ssl=0
-                 , conn_timeout=-1
-                 , op_timeout=-1
-                 ):
+    def addServer(self, host, port='389', use_ssl=0):
         """ Add a server to our list of servers """
         servers = self.getServers()
 
-        if use_ssl == 2:
-            protocol = 'ldapi'
-            port = 0
-        elif use_ssl == 1:
+        if use_ssl:
             protocol = 'ldaps'
         else:
             protocol = 'ldap'
@@ -105,28 +93,21 @@ class LDAPDelegate(Persistent):
             if str(server['host']) == host and str(server['port']) == port:
                 already_exists = 1
                 break
-
+        
         if not already_exists:
             servers.append( { 'host' : host
                             , 'port' : port
                             , 'protocol' : protocol
-                            , 'conn_timeout' : conn_timeout
-                            , 'op_timeout' : op_timeout
                             } )
 
         self._servers = servers
-
-        # Delete the cached connection in case the new server was added
-        # in response to the existing server failing in a way that leads
-        # to nasty timeouts
-        setResource('%s-connection' % self._hash, '')
 
 
     def getServers(self):
         """ Return info about all my servers """
         servers = getattr(self, '_servers', [])
 
-        if isinstance(servers, dict):
+        if isinstance(servers, DictType):
             servers = servers.values()
             self._servers = servers
 
@@ -144,10 +125,7 @@ class LDAPDelegate(Persistent):
                 new_servers.append(old_servers[i])
 
         self._servers = new_servers
-
-        # Delete the cached connection so that we don't accidentally
-        # continue using a server we should not be using anymore
-        setResource('%s-connection' % self._hash, '')
+        self._v_conn = None
 
 
     def edit( self, login_attr, users_base, rdn_attr, objectclasses
@@ -162,15 +140,14 @@ class LDAPDelegate(Persistent):
         self.read_only = not not read_only
         self.u_base = users_base
 
-        if isinstance(objectclasses, str) or isinstance(objectclasses, unicode):
+        if isinstance(objectclasses, StringType):
             objectclasses = [x.strip() for x in objectclasses.split(',')]
         self.u_classes = objectclasses
 
 
     def connect(self, bind_dn='', bind_pwd=''):
         """ initialize an ldap server connection """
-        conn = None
-        conn_string = ''
+        conn = getattr(self, '_v_conn', None)
 
         if bind_dn != '':
             user_dn = bind_dn
@@ -180,64 +157,36 @@ class LDAPDelegate(Persistent):
             user_pwd = self.bind_pwd
         else:
             user = getSecurityManager().getUser()
-            if isinstance(user, LDAPUser):
+            try:
                 user_dn = user.getUserDN()
                 user_pwd = user._getPassword()
-            else:
+            except AttributeError:  # User object is not a LDAPUser
                 user_dn = user_pwd = ''
 
-        conn = getResource('%s-connection' % self._hash, str, ())
-        if not isinstance(conn._type(), str):
+        if conn is not None:
             try:
-                conn.simple_bind_s(user_dn, user_pwd)
-                conn.search_s(self.u_base, self.BASE, '(objectClass=*)')
+                conn.simple_bind_s(user_dn, to_utf8(user_pwd))
+                conn.search_s(self.u_base, BASE, '(objectClass=*)')
                 return conn
-            except ( AttributeError
-                   , ldap.SERVER_DOWN
-                   , ldap.NO_SUCH_OBJECT
-                   , ldap.TIMEOUT
-                   , ldap.INVALID_CREDENTIALS
-                   ):
+            except (AttributeError, ldap.SERVER_DOWN, ldap.NO_SUCH_OBJECT):
                 pass
 
-        e = None
-
         for server in self._servers:
-            conn_string = self._createConnectionString(server)
+            host = server.get('host')
+            port = server.get('port')
+            protocol = server.get('protocol')
+            conn_str = '%s://%s:%s' % (protocol, host, port)
 
             try:
-                newconn = self._connect( conn_string
-                                       , user_dn
-                                       , user_pwd
-                                       , conn_timeout=server.get('conn_timeout',-1)
-                                       , op_timeout=server.get('op_timeout', -1)
-                                       )
-                return newconn
-            except ( ldap.SERVER_DOWN
-                   , ldap.TIMEOUT
-                   , ldap.INVALID_CREDENTIALS
-                   ), e:
+                connection = self._connect(conn_str, user_dn, user_pwd)
+                self._v_conn = connection
+
+                return connection
+
+            except ldap.SERVER_DOWN:
                 continue
 
-        # If we get here it means either there are no servers defined or we
-        # tried them all. Try to produce a meaningful message and raise
-        # an exception.
-        if len(self._servers) == 0:
-            logger.critical('No servers defined')
-        else:
-            if e is not None:
-                msg_supplement = str(e)
-            else:
-                msg_supplement = 'n/a'
-
-            err_msg = 'Failure connecting, last attempted server: %s (%s)' % (
-                        conn_string, msg_supplement )
-            logger.critical(err_msg, exc_info=1)
-
-        if e is not None:
-            raise e
-
-        return None
+        raise ldap.CONNECT_ERROR, 'Cannot connect to any server'
 
 
     def handle_referral(self, exception):
@@ -246,8 +195,11 @@ class LDAPDelegate(Persistent):
         info = payload.get('info')
         ldap_url = info[info.find('ldap'):]
 
-        if isLDAPUrl(ldap_url):
-            conn_str = LDAPUrl(ldap_url).initializeUrl()
+        if ldap.is_ldap_url(ldap_url):
+            parsed_url = LDAPUrl(ldap_url)
+            conn_str = '%s://%s' % ( parsed_url.urlscheme or 'ldap'
+                                   , parsed_url.hostport
+                                   )
 
             if self.binduid_usage == 1:
                 user_dn = self.bind_dn
@@ -263,34 +215,13 @@ class LDAPDelegate(Persistent):
             return self._connect(conn_str, user_dn, user_pwd)
 
         else:
-            raise ldap.CONNECT_ERROR, 'Bad referral "%s"' % str(exception)
+            raise ldap.CONNECT_ERROR, 'Bad referral "%s"' % str(e)
 
 
-    def _connect( self
-                , connection_string
-                , user_dn
-                , user_pwd
-                , conn_timeout=5
-                , op_timeout=-1
-                ):
+    def _connect(self, connection_string, user_dn, user_pwd):
         """ Factored out to allow usage by other pieces """
         # Connect to the server to get a raw connection object
-        connection = getResource( '%s-connection' % self._hash
-                                , c_factory
-                                , (connection_string,)
-                                )
-        if not connection._type is c_factory:
-            connection = c_factory(connection_string)
-
-        connection_strings = [self._createConnectionString(s) 
-                                            for s in self._servers]
-
-        if connection_string in connection_strings:
-            # We only reuse a connection if it is in our own configuration
-            # in order to prevent getting "stuck" on a connection created
-            # while dealing with a ldap.REFERRAL exception
-            logger.info('Set connection %s' % self._hash)
-            setResource('%s-connection' % self._hash, connection)
+        connection = ldap.initialize(connection_string)
 
         # Set the protocol version - version 3 is preferred
         try:
@@ -298,22 +229,19 @@ class LDAPDelegate(Persistent):
         except ldap.LDAPError: # Invalid protocol version, fall back safely
             connection.set_option(ldap.OPT_PROTOCOL_VERSION, ldap.VERSION2)
 
+        # Now bind with the credentials given. Let exceptions propagate out.
+        connection.simple_bind_s(user_dn, to_utf8(user_pwd))
+
         # Deny auto-chasing of referrals to be safe, we handle them instead
         try:
             connection.set_option(ldap.OPT_REFERRALS, 0)
         except ldap.LDAPError: # Cannot set referrals, so do nothing
             pass
 
-        # Set the connection timeout
-        if conn_timeout > 0:
-            connection.set_option(ldap.OPT_NETWORK_TIMEOUT, conn_timeout)
-
-        # Set the operations timeout
-        if op_timeout > 0:
-            connection.timeout = op_timeout
-
-        # Now bind with the credentials given. Let exceptions propagate out.
-        connection.simple_bind_s(user_dn, user_pwd)
+        try: # XXX Not sure if needed.
+            connection.manage_dsa_it(0)
+        except:
+            pass
 
         return connection
 
@@ -332,7 +260,6 @@ class LDAPDelegate(Persistent):
                  , 'results' : []
                  }
         filter = to_utf8(filter)
-        base = self._clean_dn(base)
 
         try:
             connection = self.connect(bind_dn=bind_dn, bind_pwd=bind_pwd)
@@ -353,21 +280,8 @@ class LDAPDelegate(Persistent):
                     res_type, res = connection.result(all=0)
 
             for rec_dn, rec_dict in res:
-                # When used against Active Directory, "rec_dict" may not be
-                # be a dictionary in some cases (instead, it can be a list)
-                # An example of a useless "res" entry that can be ignored
-                # from AD is
-                # (None, ['ldap://ForestDnsZones.PORTAL.LOCAL/DC=ForestDnsZones,DC=PORTAL,DC=LOCAL'])
-                # This appears to be some sort of internal referral, but
-                # we can't handle it, so we need to skip over it.
-                try:
-                    items =  rec_dict.items()
-                except AttributeError:
-                    # 'items' not found on rec_dict
-                    continue
-
-                for key, value in items:
-                    if not isinstance(value, str):
+                for key, value in rec_dict.items():
+                    if not isinstance(value, StringType):
                         try:
                             for i in range(len(value)):
                                 value[i] = from_utf8(value[i])
@@ -380,27 +294,16 @@ class LDAPDelegate(Persistent):
                 result['size'] += 1
 
         except ldap.INVALID_CREDENTIALS:
-            msg = 'Invalid authentication credentials'
-            logger.debug(msg, exc_info=1)
-            result['exception'] = msg
+            result['exception'] = 'Invalid authentication credentials'
 
         except ldap.NO_SUCH_OBJECT:
-            msg = 'Cannot find %s under %s' % (filter, base)
-            logger.debug(msg, exc_info=1)
-            result['exception'] = msg
+            result['exception'] = 'Cannot find %s under %s' % (filter, base)
 
-        except (ldap.SIZELIMIT_EXCEEDED, ldap.ADMINLIMIT_EXCEEDED):
-            msg = 'Too many results for this query'
-            logger.warning(msg, exc_info=1)
-            result['exception'] = msg
-
-        except (KeyboardInterrupt, SystemExit):
-            raise
+        except ldap.SIZELIMIT_EXCEEDED:
+            result['exception'] = 'Too many results for this query'
 
         except Exception, e:
-            msg = str(e)
-            logger.error(msg, exc_info=1)
-            result['exception'] = msg
+            result['exception'] = str(e)
 
         return result
 
@@ -408,18 +311,15 @@ class LDAPDelegate(Persistent):
     def insert(self, base, rdn, attrs=None):
         """ Insert a new record """
         if self.read_only:
-            msg = 'Running in read-only mode, insertion is disabled'
-            logger.info(msg)
-            return msg
+            return 'Running in read-only mode, insertion is disabled'
 
         msg = ''
-
-        dn = self._clean_dn(to_utf8('%s,%s' % (rdn, base)))
+        dn = to_utf8('%s,%s' % (rdn, base))
         attribute_list = []
         attrs = attrs and attrs or {}
 
         for attr_key, attr_val in attrs.items():
-            if isinstance(attr_val, str) or isinstance(attr_val, unicode):
+            if isinstance(attr_val, StringType):
                 attr_val = [x.strip() for x in attr_val.split(';')]
 
             if attr_val != ['']:
@@ -449,31 +349,25 @@ class LDAPDelegate(Persistent):
             e_name = e.__class__.__name__
             msg = '%s LDAPDelegate.insert: %s' % (e_name, str(e))
 
-        if msg != '':
-            logger.info(msg, exc_info=1)
-
         return msg
 
 
     def delete(self, dn):
         """ Delete a record """
         if self.read_only:
-            msg = 'Running in read-only mode, deletion is disabled'
-            logger.info(msg)
-            return msg
+            return 'Running in read-only mode, deletion is disabled'
 
         msg = ''
-        utf8_dn = self._clean_dn(to_utf8(dn))
 
         try:
             connection = self.connect()
-            connection.delete_s(utf8_dn)
+            connection.delete_s(dn)
         except ldap.INVALID_CREDENTIALS:
             msg = 'No permission to delete "%s"' % dn
         except ldap.REFERRAL, e:
             try:
                 connection = self.handle_referral(e)
-                connection.delete_s(utf8_dn)
+                connection.delete_s(dn)
             except ldap.INVALID_CREDENTIALS:
                 msg = 'No permission to delete "%s"' % dn
             except Exception, e:
@@ -481,21 +375,16 @@ class LDAPDelegate(Persistent):
         except Exception, e:
             msg = 'LDAPDelegate.delete: %s' % str(e)
 
-        if msg != '':
-            logger.info(msg, exc_info=1)
-
         return msg
 
 
     def modify(self, dn, mod_type=None, attrs=None):
         """ Modify a record """
         if self.read_only:
-            msg = 'Running in read-only mode, modification is disabled'
-            logger.info(msg)
-            return msg
+            return 'Running in read-only mode, modification is disabled'
 
-        utf8_dn = self._clean_dn(to_utf8(dn))
-        res = self.search(base=utf8_dn, scope=self.BASE)
+        utf8_dn = to_utf8(dn)
+        res = self.search(base=utf8_dn, scope=BASE)
         attrs = attrs and attrs or {}
 
         if res['exception']:
@@ -513,9 +402,9 @@ class LDAPDelegate(Persistent):
 
             if mod_type is None:
                 if cur_rec.get(key, ['']) != values and values != ['']:
-                    mod_list.append((self.REPLACE, key, values))
+                    mod_list.append((REPLACE, key, values))
                 elif cur_rec.has_key(key) and values == ['']:
-                    mod_list.append((self.DELETE, key, None))
+                    mod_list.append((DELETE, key, None))
             else:
                 mod_list.append((mod_type, key, values))
 
@@ -524,18 +413,13 @@ class LDAPDelegate(Persistent):
 
             new_rdn = attrs.get(self.rdn_attr, [''])[0]
             if new_rdn and new_rdn != cur_rec.get(self.rdn_attr)[0]:
-                raw_utf8_rdn = to_utf8('%s=%s' % (self.rdn_attr, new_rdn))
-                new_utf8_rdn = self._clean_rdn(raw_utf8_rdn)
+                new_utf8_rdn = to_utf8('%s=%s' % (self.rdn_attr, new_rdn))
                 connection.modrdn_s(utf8_dn, new_utf8_rdn)
-                old_dn_exploded = self.explode_dn(utf8_dn)
+                old_dn_exploded = explode_dn(utf8_dn)
                 old_dn_exploded[0] = new_utf8_rdn
                 utf8_dn = ','.join(old_dn_exploded)
 
-            if mod_list:
-                connection.modify_s(utf8_dn, mod_list)
-            else:
-                debug_msg = 'Nothing to modify: %s' % utf8_dn
-                logger.debug('LDAPDelegate.modify: %s' % debug_msg)
+            connection.modify_s(utf8_dn, mod_list)
 
         except ldap.INVALID_CREDENTIALS, e:
             e_name = e.__class__.__name__
@@ -556,76 +440,5 @@ class LDAPDelegate(Persistent):
             e_name = e.__class__.__name__
             msg = '%s LDAPDelegate.modify: %s' % (e_name, str(e))
 
-        if msg != '':
-            logger.info(msg, exc_info=1)
-
         return msg
 
-
-    # Some helper functions and constants that are now on the LDAPDelegate
-    # object itself to make it easier to override in subclasses, paving
-    # the way for different kinds of delegates.
-
-    ADD = ldap.MOD_ADD
-    DELETE = ldap.MOD_DELETE
-    REPLACE = ldap.MOD_REPLACE
-    BASE = ldap.SCOPE_BASE
-    ONELEVEL = ldap.SCOPE_ONELEVEL
-    SUBTREE = ldap.SCOPE_SUBTREE
-
-    def _clean_rdn(self, rdn):
-        """ Escape all characters that need escaping for a DN, see RFC 2253 """
-        if rdn.find('\\') != -1:
-            # already escaped, disregard
-            return rdn
-
-        try:
-            key, val = rdn.split('=')
-            val = val.lstrip()
-            return '%s=%s' % (key, escape_dn_chars(val))
-        except ValueError:
-            return rdn
-
-    def _clean_dn(self, dn):
-        """ Escape all characters that need escaping for a DN, see RFC 2253 """
-        elems = [self._clean_rdn(x) for x in dn.split(',')]
-
-        return ','.join(elems)
-
-
-    def explode_dn(self, dn, notypes=0):
-        """ Indirection to avoid need for importing ldap elsewhere """
-        return ldap.explode_dn(dn, notypes)
-
-
-    def getScopes(self):
-        """ Return simple tuple of ldap scopes
-
-        This method is used to create a simple way to store LDAP scopes as
-        numbers by the LDAPUserFolder. The returned tuple is used to find
-        a scope by using a integer that is used as an index to the sequence.
-        """
-        return (self.BASE, self.ONELEVEL, self.SUBTREE)
-
-
-    def _createConnectionString(self, server_info):
-        """ Convert a server info mapping into a connection string
-        """
-        protocol = server_info['protocol']
-
-        if protocol == 'ldapi':
-            hostport = server_info['host']
-        else:
-            hostport = '%s:%s' % (server_info['host'], server_info['port'])
-
-        ldap_url = LDAPUrl(urlscheme=protocol, hostport=hostport)
-
-        return ldap_url.initializeUrl()
-
-
-
-# Register this delegate class with the delegate registry
-registerDelegate( 'LDAP delegate'
-                , LDAPDelegate
-                , 'The default LDAP delegate from the LDAPUserFolder package'
-                )

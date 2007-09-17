@@ -22,6 +22,7 @@ from DateTime.DateTime import DateTime
 
 # LDAPUserFolder package imports
 from LDAPUser import LDAPUser
+from LDAPDelegate import explode_dn, ADD, DELETE
 from utils import GROUP_MEMBER_MAP
 from SimpleLog import SimpleLog
 
@@ -228,7 +229,7 @@ class LDAPUserSatellite(SimpleItem):
                     try:
                         cn = resultset[i].get('cn')[0]
                     except KeyError:    # NDS oddity
-                        cn = luf._delegate.explode_dn(dn, 1)[0]
+                        cn = explode_dn(dn, 1)[0]
 
                     add_role_dict[cn] = 1
 
@@ -309,7 +310,7 @@ class LDAPUserSatellite(SimpleItem):
                     try:
                         cn = resultset[i].get('cn')[0]
                     except KeyError:    # NDS oddity
-                        cn = luf._delegate.explode_dn(dn, 1)[0]
+                        cn = explode_dn(dn, 1)[0]
 
                     if attr is None:
                         group_list.append((cn, dn))
@@ -386,7 +387,7 @@ class LDAPUserSatellite(SimpleItem):
             if role_dn not in all_groups:
                 newgroup_type = 'groupOfUniqueNames'
                 newgroup_member = GROUP_MEMBER_MAP.get(newgroup_type)
-                newgroup_name = luf._delegate.explode_dn(role_dn, 1)[0]
+                newgroup_name = explode_dn(role_dn, 1)[0]
                 connection = luf._connect()
                 attr_list = [ ('objectClass', ['top', newgroup_type])
                             , ('cn', newgroup_name)
@@ -397,12 +398,12 @@ class LDAPUserSatellite(SimpleItem):
 
         for group in all_groups:
             if group in cur_groups and group not in role_dns:
-                operations.append({ 'op'     : luf._delegate.DELETE
+                operations.append({ 'op'     : DELETE
                                   , 'target' : group
                                   , 'type'   : luf.getGroupType(group)
                                   } )
             elif group in role_dns and group not in cur_groups:
-                operations.append({ 'op'     : luf._delegate.ADD
+                operations.append({ 'op'     : ADD
                                   , 'target' : group
                                   , 'type'   : luf.getGroupType(group)
                                   } )
